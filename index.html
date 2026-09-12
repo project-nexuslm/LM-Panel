@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Last-Mile Branch Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1F3864; --navy-d:#152647; --teal:#0F7C6B; --teal-l:#EAF1EF;
+    --amber:#B98900; --amber-bg:#FAEEDA; --red:#B3261E; --red-bg:#FCEAE9;
+    --green:#1E7A3E; --green-bg:#E7F5EC; --grey:#717784; --grey-bg:#F1F0EE;
+    --border:#E6E5E2; --bg:#F7F7F5; --purple:#5B3E96; --purple-bg:#EFE9F7;
+    --ink:#0A0A0A; --accent:#B15F2C; --accent-from:#CF8047; --accent-to:#97501F;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;overflow:hidden;}
+  body{font-family:'Onest','Segoe UI',Inter,Arial,sans-serif;background:var(--bg);color:#1a1a1a;font-size:13px;letter-spacing:-.005em;}
+  input,select,button,textarea{font-family:inherit;font-size:12.5px;}
+  .mono{font-family:'JetBrains Mono',Consolas,monospace;}
+  .lockText{color:var(--grey);font-style:italic;font-size:12.5px;}
+
+  /* LOGIN */
+  #loginScreen{height:100vh;width:100%;position:relative;overflow:hidden;background:var(--ink);}
+  .landingStrip{position:absolute;inset:0;}
+  .landingPanel{position:absolute;top:0;height:100%;overflow:hidden;}
+  .landingPanel:nth-child(1){left:0%;width:35%;z-index:1;}
+  .landingPanel:nth-child(2){left:32%;width:36%;z-index:2;}
+  .landingPanel:nth-child(3){left:65%;width:35%;z-index:3;}
+  .landingPanel img{width:100%;height:100%;object-fit:cover;
+    filter:grayscale(.25) contrast(1.05) brightness(1.02) sepia(.08) saturate(1.15);
+    transition:transform .7s cubic-bezier(.22,1,.36,1);}
+  .landingPanel:hover img{transform:scale(1.045);}
+  .landingPanel:nth-child(2) img{mask-image:linear-gradient(to right, transparent 0%, black 9%, black 100%);
+    -webkit-mask-image:linear-gradient(to right, transparent 0%, black 9%, black 100%);}
+  .landingPanel:nth-child(3) img{mask-image:linear-gradient(to right, transparent 0%, black 9%, black 100%);
+    -webkit-mask-image:linear-gradient(to right, transparent 0%, black 9%, black 100%);}
+  .landingPanel::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(10,10,10,.12) 0%,rgba(10,10,10,.05) 45%,rgba(10,10,10,.62) 100%);}
+  .landingCapt{position:absolute;left:1.5rem;bottom:1.6rem;z-index:2;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.4);}
+  .landingCapt .step{font-size:.65rem;text-transform:uppercase;letter-spacing:.14em;color:var(--accent-from);font-weight:700;}
+  .landingCapt .label{font-size:1.15rem;font-weight:600;margin-top:.3rem;letter-spacing:-.01em;}
+  .landingLogo{position:absolute;top:1.6rem;left:1.8rem;z-index:5;display:flex;align-items:center;gap:8px;color:#fff;
+    text-shadow:0 2px 8px rgba(0,0,0,.5);}
+  .landingLogo .mark{width:26px;height:26px;border-radius:9999px;background:linear-gradient(135deg,var(--accent-from),var(--accent-to));
+    display:grid;place-items:center;color:#fff;font-weight:700;font-size:11px;flex-shrink:0;}
+  .landingLogo b{font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;}
+
+  .loginTrigger{position:fixed;top:1.5rem;right:1.5rem;z-index:10;background:rgba(255,255,255,.14);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.28);
+    color:#fff;padding:9px 22px;border-radius:9999px;font-size:12px;font-weight:600;text-transform:uppercase;
+    letter-spacing:.07em;cursor:pointer;transition:background .18s,transform .18s;}
+  .loginTrigger:hover{background:rgba(255,255,255,.26);transform:translateY(-1px);}
+
+  .loginBackdrop{position:fixed;inset:0;background:rgba(10,10,10,0);pointer-events:none;z-index:8;transition:background .3s;}
+  .loginBackdrop.open{background:rgba(10,10,10,.4);pointer-events:auto;}
+
+  .loginBox{background:rgba(255,255,255,.96);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,.4);border-radius:20px;padding:30px 30px;width:370px;
+    box-shadow:0 30px 80px rgba(0,0,0,.5);position:fixed;z-index:9;top:4.6rem;right:1.5rem;
+    opacity:0;transform:translateY(-14px) scale(.97);pointer-events:none;
+    transition:opacity .25s cubic-bezier(.22,1,.36,1),transform .25s cubic-bezier(.22,1,.36,1);}
+  .loginBox.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}
+  @media (max-width:900px){ .loginBox{width:88vw;right:6vw;top:4.2rem;}
+    .landingCapt .label{font-size:.9rem;} .landingCapt .step{font-size:.6rem;} }
+  .loginBrand{display:flex;align-items:center;gap:8px;margin-bottom:22px;}
+  .loginBrand .mark{width:30px;height:30px;border-radius:9999px;background:linear-gradient(135deg,var(--accent-from),var(--accent-to));
+    display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0;}
+  .loginBrand b{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--ink);}
+  .loginBox h1{font-size:20px;font-weight:600;color:var(--ink);margin:0 0 4px;letter-spacing:-.01em;}
+  .loginBox p{font-size:12px;color:var(--grey);margin:0 0 24px;}
+  .loginBox label{display:block;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--grey);margin:14px 0 6px;}
+  .loginBox input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--grey-bg);
+    transition:border-color .18s,background .18s;font-size:13px;}
+  .loginBox input:focus{outline:none;border-color:var(--accent);background:#fff;}
+  .loginBox button{width:100%;margin-top:22px;padding:11px;background:var(--ink);color:#fff;border:none;
+    border-radius:9999px;font-weight:600;cursor:pointer;font-size:13.5px;text-transform:uppercase;letter-spacing:.05em;
+    transition:background .18s cubic-bezier(.22,1,.36,1),transform .18s;}
+  .loginBox button:hover{background:var(--accent-to);transform:translateY(-1px);}
+  .loginBox button:active{transform:scale(.98);}
+  .loginErr{color:var(--red);font-size:12px;margin-top:10px;min-height:14px;}
+  .loginHint{margin-top:20px;font-size:11px;color:#999;border-top:1px solid var(--border);padding-top:14px;line-height:1.7;}
+  .credCard{margin-top:18px;background:var(--grey-bg);border:1px solid var(--border);border-radius:14px;padding:12px 14px;}
+  .credCard .credTitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:8px;}
+  .credRow{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;padding:4px 0;color:#333;}
+  .credRow b{font-family:'JetBrains Mono',Consolas,monospace;font-weight:600;color:var(--ink);}
+  .credRow span.role{color:var(--grey);font-size:10.5px;}
+
+  /* APP SHELL — fixed viewport, only .content scrolls */
+  #app{display:none;height:100vh;}
+  .shell{display:flex;height:100vh;overflow:hidden;}
+  .sidebar{width:204px;background:var(--ink);color:#fff;flex-shrink:0;display:flex;flex-direction:column;height:100vh;
+    position:relative;overflow:hidden;}
+  .sidebar::after{content:'';position:absolute;left:-30%;bottom:-10%;width:160%;height:50%;pointer-events:none;
+    background:radial-gradient(circle,rgba(177,95,44,.16),transparent 70%);}
+  .sidebar .brand{padding:16px;border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0;position:relative;z-index:1;}
+  .sidebar .brand b{font-size:13.5px;font-weight:600;letter-spacing:.01em;}
+  .sidebar .brand span{display:block;font-size:10px;color:var(--accent-from);margin-top:2px;text-transform:uppercase;letter-spacing:.08em;font-weight:500;}
+  .navlist{flex:1;padding:8px 0;overflow-y:auto;position:relative;z-index:1;}
+  .navitem{padding:9px 16px;font-size:12.5px;cursor:pointer;color:rgba(255,255,255,.6);border-left:3px solid transparent;
+    display:flex;align-items:center;gap:9px;transition:background .18s cubic-bezier(.22,1,.36,1),color .18s;}
+  .navIcon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+  .navitem:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.9);}
+  .navitem.active{background:rgba(255,255,255,.07);color:#fff;border-left-color:var(--accent-from);font-weight:600;}
+  .sidebar .foot{padding:10px 16px;border-top:1px solid rgba(255,255,255,.1);font-size:10px;color:rgba(255,255,255,.35);
+    flex-shrink:0;position:relative;z-index:1;}
+
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;height:100vh;overflow:hidden;}
+  .topbar{background:#fff;border-bottom:1px solid var(--border);padding:9px 18px;display:flex;
+    align-items:center;justify-content:space-between;flex-shrink:0;}
+  .topbar .officeSel select{padding:5px 8px;border:1px solid var(--border);border-radius:12px;font-weight:600;color:var(--navy);font-size:12.5px;}
+  .topbar .userInfo{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--grey);}
+  #impersonateBanner{display:inline-flex;align-items:center;gap:6px;}
+  .topbar .userInfo b{color:#222;}
+  .roleTag{padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;}
+  .roleTag.super{background:var(--purple-bg);color:var(--purple);}
+  .roleTag.office{background:var(--teal-l);color:var(--teal);}
+  .logoutBtn{padding:6px 13px;background:var(--grey-bg);border:1px solid var(--border);border-radius:9999px;cursor:pointer;font-size:11.5px;
+    transition:background .18s,transform .18s;}
+  .logoutBtn:hover{background:var(--border);transform:translateY(-1px);}
+  .logoutBtn:hover{background:#e8e8e8;}
+
+  .content{padding:16px 18px;flex:1;overflow-y:auto;overflow-x:auto;}
+  .pageTitle{font-size:16.5px;font-weight:700;color:var(--navy);margin:0 0 2px;}
+  .pageSub{font-size:11.5px;color:var(--grey);margin:0 0 12px;}
+
+  /* CARDS */
+  .cardGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px;}
+  .kpi{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 13px 10px;transition:box-shadow .18s,transform .18s;
+    position:relative;overflow:hidden;}
+  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--navy),var(--teal));
+    opacity:.55;}
+  .kpi.good::before{background:linear-gradient(90deg,var(--teal),var(--green));}
+  .kpi.warn::before{background:linear-gradient(90deg,var(--amber),#e0ac2e);}
+  .kpi.bad::before{background:linear-gradient(90deg,var(--red),#d9534f);}
+  .kpi:hover{box-shadow:0 6px 20px rgba(31,56,100,.12);transform:translateY(-2px);}
+  .kpi .lbl{font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:.03em;font-weight:600;}
+  .kpi .val{font-size:20px;font-weight:800;color:var(--navy);margin-top:3px;letter-spacing:-.01em;}
+  .kpi .sub{font-size:10.5px;color:var(--grey);margin-top:2px;}
+  .kpi.warn .val{color:var(--amber);}
+  .kpi.bad .val{color:var(--red);}
+  .kpi.good .val{color:var(--green);}
+
+  /* REPORTS / INSIGHT CARDS */
+  .reportHero{background:linear-gradient(120deg,var(--navy) 0%,#132c54 55%,var(--teal) 130%);color:#fff;border-radius:12px;
+    padding:22px 24px;margin-bottom:16px;position:relative;overflow:hidden;}
+  .reportHero::after{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%);}
+  .reportHero h1{font-size:19px;font-weight:800;margin:0 0 4px;position:relative;}
+  .reportHero p{font-size:12px;color:rgba(255,255,255,.8);margin:0;max-width:640px;position:relative;}
+  .reportHero .tagRow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;position:relative;}
+  .reportHero .tag{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:20px;
+    padding:3px 10px;font-size:10.5px;font-weight:600;}
+  .insightGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:16px;}
+  .insightCard{background:#fff;border:1px solid var(--border);border-left:4px solid var(--teal);border-radius:12px;
+    padding:13px 15px;transition:box-shadow .18s,transform .18s;}
+  .insightCard:hover{box-shadow:0 6px 18px rgba(31,56,100,.1);transform:translateY(-2px);}
+  .insightCard .icon{font-size:18px;margin-bottom:6px;display:block;}
+  .insightCard h4{margin:0 0 5px;font-size:12.5px;color:var(--navy);font-weight:700;}
+  .insightCard p{margin:0;font-size:11.5px;color:#444;line-height:1.5;}
+  .insightCard.navy{border-left-color:var(--navy);}
+  .insightCard.amber{border-left-color:var(--amber);}
+  .insightCard.purple{border-left-color:var(--purple);}
+  .sectionHead{display:flex;align-items:center;gap:8px;margin:20px 0 10px;}
+  .sectionHead .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex-shrink:0;}
+  .sectionHead h3{margin:0;font-size:13.5px;color:var(--navy);font-weight:700;}
+  .statStrip{display:flex;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px;
+    background:#fff;flex-wrap:wrap;}
+  .statStrip .cell{flex:1;min-width:140px;padding:12px 14px;border-right:1px solid var(--border);}
+  .statStrip .cell:last-child{border-right:none;}
+  .statStrip .cell .n{font-size:18px;font-weight:800;color:var(--navy);}
+  .statStrip .cell .l{font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:.03em;margin-top:2px;}
+
+  /* TABLE */
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+  thead th{background:var(--navy);color:#fff;font-size:10px;text-transform:uppercase;letter-spacing:.02em;
+    padding:6px 7px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:1;}
+  tbody td{padding:4px 7px;border-top:1px solid var(--border);font-size:11.5px;vertical-align:top;}
+  tbody tr:nth-child(even){background:#FAFBFC;}
+  tr.catRow td{background:var(--teal-l);color:var(--teal);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.02em;padding:4px 7px;}
+  tr.totalRow td{background:var(--grey-bg);font-weight:700;}
+  td input[type=text],td input[type=number],td input[type=date],td select{width:100%;padding:3px 5px;border:1px solid var(--border);
+    border-radius:4px;background:#fffdf5;min-width:64px;font-size:11.5px;}
+  td input[readonly]{background:#F2F2F2;color:#555;}
+  .tblWrap{overflow-x:auto;border-radius:7px;margin-bottom:12px;max-height:340px;overflow-y:auto;}
+  .tblWrap.tall{max-height:460px;}
+
+  .pill{display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:600;}
+  .pill.Completed,.pill.OK,.pill.Yes{background:var(--green-bg);color:var(--green);}
+  .pill.InProgress,.pill.Partial,.pill.Shortage{background:var(--amber-bg);color:var(--amber);}
+  .pill.NotStarted,.pill.No,.pill.Damaged{background:var(--red-bg);color:var(--red);}
+  .pill.NA,.pill.NotVerified,.pill.Excess{background:var(--grey-bg);color:var(--grey);}
+
+  .sectionBtns{display:flex;gap:8px;margin-bottom:10px;}
+  .btn{padding:7px 15px;border-radius:9999px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:11.5px;font-weight:600;
+    transition:background .18s cubic-bezier(.22,1,.36,1),transform .18s cubic-bezier(.22,1,.36,1),box-shadow .18s;}
+  .btn:hover{background:var(--grey-bg);transform:translateY(-1px);}
+  .btn:active{transform:scale(.96);}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .btn.primary:hover{background:var(--accent-to);border-color:var(--accent-to);box-shadow:0 4px 12px rgba(177,95,44,.28);}
+  .btn.danger{color:var(--red);border-color:var(--red-bg);}
+  .btn.danger:hover{background:var(--red-bg);}
+  .btn.small{padding:4px 10px;font-size:10.5px;}
+
+  /* ORG CHART */
+  .orgTree{display:flex;flex-direction:column;align-items:center;gap:7px;margin:6px 0 14px;padding:12px;
+    background:#fff;border:1px solid var(--border);border-radius:12px;overflow-x:auto;}
+  .orgLevel{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .orgNode{background:var(--navy);color:#fff;border-radius:7px;padding:6px 10px;min-width:128px;text-align:center;}
+  .orgNode.l2{background:var(--teal);}
+  .orgNode.l3{background:var(--teal-l);color:var(--navy);}
+  .orgNode .t{font-weight:700;font-size:11px;}
+  .orgNode .n{font-size:10.5px;margin-top:2px;opacity:.9;}
+  .orgNode .c{font-size:9.5px;margin-top:1px;opacity:.75;}
+  .connector{width:2px;background:var(--border);height:10px;}
+
+  .adminGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px;
+    transition:box-shadow .18s,transform .18s;}
+  .panel h3{margin:0 0 8px;font-size:12.5px;color:var(--navy);}
+  .panel input,.panel select{width:100%;padding:6px;margin-bottom:6px;border:1px solid var(--border);border-radius:6px;font-size:12px;}
+  .miniList{font-size:11.5px;max-height:150px;overflow-y:auto;}
+  .miniList div{padding:4px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;}
+
+  .inlineForm{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:8px;align-items:end;}
+  .inlineForm label{font-size:10px;font-weight:600;color:var(--grey);display:block;margin-bottom:2px;}
+  .inlineForm input,.inlineForm select{width:100%;padding:5px 6px;border:1px solid var(--border);border-radius:5px;font-size:11.5px;}
+
+  .lockBanner{background:var(--amber-bg);color:var(--amber);padding:7px 11px;border-radius:6px;font-size:11px;margin-bottom:10px;}
+  .placeholderBox{background:#fff;border:1px dashed var(--border);border-radius:10px;padding:26px;text-align:center;color:var(--grey);font-size:12px;}
+
+  .toast{position:fixed;bottom:18px;right:18px;background:var(--green);color:#fff;padding:8px 16px;border-radius:6px;
+    font-size:12px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.22);opacity:0;transform:translateY(6px);
+    transition:opacity .2s,transform .2s;pointer-events:none;z-index:999;}
+  .toast.show{opacity:1;transform:translateY(0);}
+
+  /* Collapsible per-branch sections (All Branches view) */
+  .branchSection{background:#fff;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+  .branchSection summary{padding:9px 14px;font-weight:700;color:var(--navy);cursor:pointer;font-size:12.5px;
+    background:var(--teal-l);list-style:none;display:flex;justify-content:space-between;align-items:center;}
+  .branchSection summary::-webkit-details-marker{display:none;}
+  .branchSection summary .stat{font-size:10.5px;color:var(--teal);font-weight:600;}
+  .branchSection .branchBody{padding:12px 14px;}
+
+  @media (max-width:900px){.sidebar{width:56px;}.sidebar .brand span,.navitem span.lbl{display:none;}.adminGrid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="loginScreen">
+  <div class="landingStrip">
+    <div class="landingPanel">
+      <img src="https://images.pexels.com/photos/6169668/pexels-photo-6169668.jpeg?auto=compress&cs=tinysrgb&w=1200"
+        alt="Two warehouse staff loading and picking up packages for dispatch">
+      <div class="landingCapt"><div class="step">Step 1</div><div class="label">Picked Up</div></div>
+    </div>
+    <div class="landingPanel">
+      <img src="https://images.pexels.com/photos/12203654/pexels-photo-12203654.jpeg?auto=compress&cs=tinysrgb&w=1200"
+        alt="A delivery rider on a motorcycle en route to the customer">
+      <div class="landingCapt"><div class="step">Step 2</div><div class="label">On The Way</div></div>
+    </div>
+    <div class="landingPanel">
+      <img src="https://images.pexels.com/photos/13443801/pexels-photo-13443801.jpeg?auto=compress&cs=tinysrgb&w=1200"
+        alt="A smiling customer receiving their package at the doorstep">
+      <div class="landingCapt"><div class="step">Step 3</div><div class="label">Delivered, Smiling</div></div>
+    </div>
+  </div>
+  <div class="landingLogo"><span class="mark">L</span><b>Last-Mile Dashboard</b></div>
+  <button class="loginTrigger" onclick="LandingUI.toggleLogin()">Login</button>
+  <div class="loginBackdrop" id="loginBackdrop" onclick="LandingUI.closeLogin()"></div>
+  <div class="loginBox" id="loginBox">
+    <div class="loginBrand"><span class="mark">L</span><b>Last-Mile</b></div>
+    <h1>Branch Dashboard</h1>
+    <p>Sign in to your facility / admin console</p>
+    <label>Mobile Number</label>
+    <input type="text" id="loginMobile" placeholder="10-digit mobile" maxlength="10">
+    <label>Password</label>
+    <input type="password" id="loginPass" placeholder="Password">
+    <button onclick="Auth.login()">Sign In</button>
+    <div class="loginErr" id="loginErr"></div>
+    <div class="credCard">
+      <div class="credTitle">Demo Login Credentials</div>
+      <div class="credRow"><span>Super Admin <span class="role">(full access)</span></span><b>9999999999 / Admin@2026</b></div>
+      <div class="credRow"><span>Pollachi <span class="role">(office)</span></span><b>9000000001 / Office@2026</b></div>
+      <div class="credRow"><span>Tiruppur <span class="role">(office)</span></span><b>9000000002 / Office@2026</b></div>
+      <div class="credRow"><span>Erode <span class="role">(office)</span></span><b>9000000003 / Office@2026</b></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <div class="shell">
+    <div class="sidebar">
+      <div class="brand"><b>Last-Mile Dashboard</b><span id="brandOffice">—</span></div>
+      <div class="navlist" id="navList"></div>
+      <div class="foot">v3.0 &middot; Local Data Store</div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="officeSel" id="officeSelWrap"></div>
+        <div class="userInfo">
+          <span id="impersonateBanner" style="display:none;"></span>
+          <span>Signed in as <b id="userLabel"></b></span>
+          <span class="roleTag" id="roleTagEl"></span>
+          <button class="logoutBtn" onclick="Auth.logout()">Log Out</button>
+        </div>
+      </div>
+      <div class="content" id="content"></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toastEl">Saved</div>
+
+<script>
+/* ============================================================
+   UTIL
+============================================================ */
+const LandingUI = (function(){
+  function toggleLogin(){
+    const box=document.getElementById('loginBox');
+    const backdrop=document.getElementById('loginBackdrop');
+    const opening = !box.classList.contains('open');
+    box.classList.toggle('open');
+    backdrop.classList.toggle('open');
+    if(opening) setTimeout(function(){ document.getElementById('loginMobile').focus(); }, 180);
+  }
+  function closeLogin(){
+    document.getElementById('loginBox').classList.remove('open');
+    document.getElementById('loginBackdrop').classList.remove('open');
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape') closeLogin();
+  });
+  return {toggleLogin:toggleLogin, closeLogin:closeLogin};
+})();
+
+const Util = (function(){
+  function uid(){return 'id'+Math.random().toString(36).slice(2,10);}
+  function todayISO(){return new Date().toISOString().slice(0,10);}
+  function pillClass(v){ return (v||'NA').replace(/\s|\//g,''); }
+  function inr(n){ n=Number(n||0); return '\u20B9'+n.toLocaleString('en-IN'); }
+  return {uid, todayISO, pillClass, inr};
+})();
+
+/* ============================================================
+   SEED DATA
+============================================================ */
+const SEED = {
+  facility: [
+    {cat:'Civil & Layout', item:'Dock/gate count vs vehicle volume', std:'Peak inbound/outbound vehicle count'},
+    {cat:'Civil & Layout', item:'Floor load capacity', std:'Rated for racking + stacked volume in use'},
+    {cat:'Civil & Layout', item:'Roof/shed condition (leak check)', std:'No leakage over sortation area'},
+    {cat:'Civil & Layout', item:'Sortation area pincode/beat bin layout', std:'Bins labelled and matched to current beat plan'},
+    {cat:'Civil & Layout', item:'Racking/storage installed', std:'As per approved layout drawing'},
+    {cat:'Civil & Layout', item:'Office/admin space', std:'Separate from operations floor'},
+    {cat:'Civil & Layout', item:'Vehicle parking area', std:'Sufficient for fleet on roll'},
+    {cat:'Civil & Layout', item:'Rider rest/waiting area', std:'Seating, shade/shelter available'},
+    {cat:'Material Handling & Equipment', item:'Weighing scale \u2014 calibrated', std:'Valid calibration certificate on file'},
+    {cat:'Material Handling & Equipment', item:'Trolleys / hand pallet trucks', std:'Count matches volume handled'},
+    {cat:'Material Handling & Equipment', item:'Barcode/handheld scanners', std:'Count vs manpower on shift, spares available'},
+    {cat:'IT & Connectivity', item:'Internet/WiFi uptime', std:'Backup connectivity (2nd ISP or 4G) available'},
+    {cat:'IT & Connectivity', item:'Handheld device count', std:'Matches manpower on shift + spares'},
+    {cat:'IT & Connectivity', item:'Biometric/attendance system', std:'Functional, synced to HR system'},
+    {cat:'IT & Connectivity', item:'CCTV coverage', std:'Entry/exit, sortation floor, dock \u2014 DVR storage 30+ days'},
+    {cat:'IT & Connectivity', item:'UPS/backup power for IT systems', std:'Covers core scanning/network devices'},
+    {cat:'Safety & Security', item:'Fire extinguishers', std:'Count as per norm, inspection tags valid'},
+    {cat:'Safety & Security', item:'First aid kit', std:'Stocked and accessible'},
+    {cat:'Safety & Security', item:'Security guard deployment', std:'Matches sanctioned shift coverage'},
+    {cat:'Safety & Security', item:'Emergency contact numbers displayed', std:'Police, fire, ambulance, facility head'},
+    {cat:'Safety & Security', item:'Vehicle/rider accident protocol displayed', std:'SOP visible at security desk'},
+    {cat:'Utilities', item:'Power connection & sanctioned load', std:'Sufficient for current + near-term load'},
+    {cat:'Utilities', item:'DG backup capacity', std:'Covers critical load during outage'},
+    {cat:'Utilities', item:'Water supply', std:'Adequate and functional'},
+    {cat:'Utilities', item:'Washrooms (male/female, separate)', std:'Clean, functional, adequate count'},
+    {cat:'Utilities', item:'Drinking water facility', std:'RO/purified, accessible on floor'},
+    {cat:'Utilities', item:'Housekeeping schedule', std:'Documented and being followed'},
+    {cat:'Manpower Facilities', item:'Locker facility for staff', std:'Available for belongings'},
+    {cat:'Manpower Facilities', item:'Canteen/pantry access', std:'On-site or tied up nearby'},
+    {cat:'Manpower Facilities', item:'Uniform & ID card issuance', std:'Process active for new joiners'},
+    {cat:'Documentation on File', item:'Fire NOC', std:'Valid and displayed'},
+    {cat:'Documentation on File', item:'Trade licence / shop & establishment licence', std:'Valid, renewal date tracked'},
+    {cat:'Documentation on File', item:'Rental/lease agreement', std:'Copy on file, expiry date known'},
+    {cat:'Documentation on File', item:'Vehicle & insurance copies', std:'Current for all owned/leased vehicles'},
+    {cat:'Documentation on File', item:'Statutory registers (labour law)', std:'Attendance, wage, PF/ESI registers maintained'},
+  ],
+  assets: ['Desktop','Laptop','Barcode Scanner','Handheld Device (PDA)','Table','Chair','Locker / Almirah',
+    'Weighing Scale','Trolley / Hand Pallet Truck','CCTV Camera','Biometric Device','UPS / Backup Power Unit',
+    'Fire Extinguisher','Storage Rack','Sortation Bin','Delivery Vehicle (Own Fleet)'],
+  manpower: [
+    {role:'Hub / Facility Incharge', type:'Onrole', sanc:1},
+    {role:'Team Lead / Shift Supervisor', type:'Offrole', sanc:1},
+    {role:'Field Delivery Executive \u2014 Own Fleet', type:'Offrole', sanc:10},
+    {role:'Sorting Associate / Processing In-staff', type:'Offrole', sanc:1},
+    {role:'MIS / Data Entry Executive - In-staff', type:'Offrole', sanc:1},
+    {role:'Security Guard', type:'Vendor', sanc:2},
+    {role:'Housekeeping Staff', type:'Vendor', sanc:1},
+    {role:'SLP / Audit Associate', type:'Offrole', sanc:1},
+    {role:'Customer Relationship Associate', type:'Offrole', sanc:1},
+  ],
+  orgChart: [
+    {desig:'Hub / Facility Incharge', reportsTo:'\u2014', level:1},
+    {desig:'Team Lead / Shift Supervisor', reportsTo:'Hub / Facility Incharge', level:2},
+    {desig:'MIS / Data Entry Executive', reportsTo:'Hub / Facility Incharge', level:2},
+    {desig:'SLP / Audit Associate', reportsTo:'Hub / Facility Incharge', level:2},
+    {desig:'Security Guard (Vendor)', reportsTo:'Hub / Facility Incharge', level:2},
+    {desig:'Housekeeping Staff (Vendor)', reportsTo:'Hub / Facility Incharge', level:2},
+    {desig:'Field Delivery Executive \u2014 Own Fleet', reportsTo:'Team Lead / Shift Supervisor', level:3},
+    {desig:'Sorting Associate / Processing In-staff', reportsTo:'Team Lead / Shift Supervisor', level:3},
+    {desig:'Customer Relationship Associate', reportsTo:'Team Lead / Shift Supervisor', level:3},
+  ],
+  peopleOrg: [
+    {cat:'People & Organization', item:'Org chart & reportees', covers:'Current headcount, span of control, dotted-line reporting, vacant positions'},
+    {cat:'People & Organization', item:'Rider/DE roster', covers:'Own-fleet vs vendor-fleet split, per-hub headcount, shift patterns'},
+    {cat:'People & Organization', item:'Vendor contracts', covers:'Rate cards, payment terms, SLA penalty clauses, renewal dates'},
+    {cat:'People & Organization', item:'Key contact list', covers:'Vendor POCs, ops heads, client POCs, emergency contacts'},
+    {cat:'People & Organization', item:'Attrition & hiring data', covers:'Monthly attrition by hub, open positions, hiring pipeline'},
+    {cat:'Network & Infrastructure', item:'Facility list', covers:'Hub/DC addresses, capacity, lease terms, expiry dates'},
+    {cat:'Network & Infrastructure', item:'Pincode-to-hub mapping', covers:'Which hub serves which pincode, current beat plan'},
+    {cat:'Network & Infrastructure', item:'Fleet register', covers:'Vehicle count by hub, ownership type, permit/insurance expiry'},
+    {cat:'Network & Infrastructure', item:'IT & device inventory', covers:'Handheld scanners, connectivity setup, device count'},
+    {cat:'Process & SOP', item:'Inbound & sortation SOP', covers:'Scan process, pincode/beat sort logic, exception handling'},
+    {cat:'Process & SOP', item:'Beat plan logic', covers:'How beats are drawn, rider-to-pincode fixed mapping'},
+    {cat:'Process & SOP', item:'NDR/RTO SOP', covers:'Reason-code tree, reattempt cadence, escalation triggers'},
+    {cat:'Process & SOP', item:'COD collection & reconciliation', covers:'Cash handling, deposit cycle, discrepancy handling'},
+    {cat:'Process & SOP', item:'Damage/pilferage handling', covers:'Exception bin, claims process, write-off approval'},
+    {cat:'Process & SOP', item:'Audit cadence', covers:'Cycle count frequency, escalation for shortages'},
+    {cat:'Systems, Data & Reporting', item:'TMS/OMS access', covers:'Login credentials, role/permission level'},
+    {cat:'Systems, Data & Reporting', item:'MIS & dashboards', covers:'What reports exist, who consumes them'},
+    {cat:'Systems, Data & Reporting', item:'Reporting cadence', covers:'Daily/weekly/monthly report list and recipients'},
+    {cat:'Systems, Data & Reporting', item:'Escalation/ticketing tool', covers:'Access, open ticket queue, SLA on closure'},
+    {cat:'Performance & SLA', item:'Current SLA scorecard', covers:'FAS%, NDR%, RTO%, OTD%, CPD trend'},
+    {cat:'Performance & SLA', item:'Client/marketplace SLA terms', covers:'Committed SLAs, penalty clauses, breaches'},
+    {cat:'Performance & SLA', item:'Pending RCAs', covers:'Open root-cause investigations'},
+    {cat:'Cost', item:'Budget & opex', covers:'Manpower cost, vendor payouts vs actuals'},
+    {cat:'Cost', item:'Vendor invoice status', covers:'Pending invoices, disputed amounts, payment cycle'},
+    {cat:'Cost', item:'Cost per shipment (CPS)', covers:'Current CPS by hub, trend'},
+    {cat:'Cost', item:'Ongoing cost projects', covers:'Active cost-optimization initiative status'},
+    {cat:'Compliance & Risk', item:'Statutory compliance', covers:'Labour law, PF/ESI, vehicle permits'},
+    {cat:'Compliance & Risk', item:'Safety incidents', covers:'Accident log, insurance claims, near-misses'},
+    {cat:'Compliance & Risk', item:'Data & access security', covers:'Admin-level access, revocations needed'},
+    {cat:'Open Items', item:'Stakeholder map', covers:'Client POCs, cross-functional, local admin relationships'},
+    {cat:'Open Items', item:'Open projects/pilots', covers:'Anything mid-flight at handover'},
+    {cat:'Open Items', item:'Unresolved escalations', covers:'Customer, vendor, or internal escalations open'},
+    {cat:'Open Items', item:'Verbal commitments', covers:'Anything promised externally not in writing'},
+  ],
+  employees: ['DE001 \u2014 Rider 1','DE002 \u2014 Rider 2','DE003 \u2014 Rider 3'],
+};
+
+function seedOfficeData(){
+  return {
+    facility: SEED.facility.map(f=>Object.assign({id:Util.uid(), status:'Not Started', verified:'NA', remarks:'', responsible:''}, f)),
+    assets: SEED.assets.map(a=>({id:Util.uid(), name:a, req:0, avail:0, status:'Not Verified', auditDate:'', remarks:''})),
+    manpower: SEED.manpower.map(m=>Object.assign({id:Util.uid(), onroll:0, shift:'', remarks:''}, m)),
+    orgChart: SEED.orgChart.map(o=>Object.assign({id:Util.uid(), name:'', contact:'', email:'', remarks:''}, o)),
+    peopleOrg: SEED.peopleOrg.map(p=>Object.assign({id:Util.uid(), status:'Not Started', verified:'NA', remarks:'', responsible:''}, p)),
+    employees: SEED.employees.map(function(n,i){ return {id:Util.uid(), code:'EMP'+(i+1), name:n}; }),
+    opsEntries: [],
+    opsSettings: {ratePerKm:0, ratePerDelivery:0, fixedCostPerWorkingDay:0},
+    customMetrics: [
+      {id:Util.uid(), name:'NDR Count', unit:'count'},
+      {id:Util.uid(), name:'RTO Count', unit:'count'},
+    ],
+  };
+}
+
+/* ============================================================
+   STORE (localStorage)
+============================================================ */
+const StorageAlert = (function(){
+  let shown=false;
+  function trigger(err){
+    if(shown) return;
+    shown=true;
+    const bar=document.createElement('div');
+    bar.id='storageAlertBar';
+    bar.style.cssText='position:relative;background:#B3261E;color:#fff;padding:10px 40px 10px 16px;'
+      + 'font-size:12.5px;font-weight:600;text-align:center;z-index:9999;';
+    bar.innerHTML='\u26A0 This browser is blocking saved data (private/incognito mode, storage disabled, or a security policy). '
+      + 'Edits made now may not survive closing this tab. Go to <b>Admin / Branch Setup \u2192 Download Backup</b> before you close this tab or switch files, '
+      + 'and use <b>Restore from Backup</b> to bring your data into a normal (non-private) browser window.'
+      + '<button onclick="this.parentElement.remove()" style="position:absolute;right:10px;top:6px;background:none;border:none;color:#fff;font-size:16px;cursor:pointer;line-height:1;">\u00D7</button>';
+    document.body.insertBefore(bar, document.body.firstChild);
+    console.error('Storage error:', err);
+  }
+  return { trigger:trigger };
+})();
+
+const Store = (function(){
+  const OFFICES_KEY='lmfd_offices', USERS_KEY='lmfd_users', DATA_PREFIX='lmfd_data_';
+
+  function init(){
+   try {
+    if(!safeGet(OFFICES_KEY,null)){
+      const offices=[
+        {id:'off_pollachi', name:'Pollachi', code:'PLC', status:'Active'},
+        {id:'off_tiruppur', name:'Tiruppur', code:'TUP', status:'Active'},
+        {id:'off_erode', name:'Erode', code:'ERD', status:'Active'},
+      ];
+      safeSet(OFFICES_KEY, JSON.stringify(offices));
+      offices.forEach(function(o){ safeSet(DATA_PREFIX+o.id, JSON.stringify(seedOfficeData())); });
+    }
+    if(!safeGet(USERS_KEY,null)){
+      const users=[
+        {mobile:'9999999999', password:'Admin@2026', role:'super', name:'Super Admin', active:true},
+        {mobile:'9000000001', password:'Office@2026', role:'office', officeId:'off_pollachi', name:'Pollachi Incharge', active:true},
+        {mobile:'9000000002', password:'Office@2026', role:'office', officeId:'off_tiruppur', name:'Tiruppur Incharge', active:true},
+        {mobile:'9000000003', password:'Office@2026', role:'office', officeId:'off_erode', name:'Erode Incharge', active:true},
+      ];
+      safeSet(USERS_KEY, JSON.stringify(users));
+    }
+    // Migrations for older saved data
+    const offs=getOffices();
+    let offChanged=false;
+    offs.forEach(function(o){ if(!o.status){ o.status='Active'; offChanged=true; } });
+    if(offChanged) setOffices(offs);
+    const usrs=getUsers();
+    let usrChanged=false;
+    usrs.forEach(function(u){ if(u.active===undefined){ u.active=true; usrChanged=true; } });
+    if(usrChanged) setUsers(usrs);
+    getOffices().forEach(function(o){
+      const d=getData(o.id);
+      let changed=false;
+      if(!d.employees){ d.employees=seedOfficeData().employees; changed=true; }
+      if(!d.opsEntries){ d.opsEntries=[]; changed=true; }
+      if(!d.opsSettings){ d.opsSettings={ratePerKm:0, ratePerDelivery:0, fixedCostPerWorkingDay:0}; changed=true; }
+      if(!d.customMetrics || !d.customMetrics.length){
+        d.customMetrics=[
+          {id:Util.uid(), name:'NDR Count', unit:'count'},
+          {id:Util.uid(), name:'RTO Count', unit:'count'},
+        ];
+        changed=true;
+      }
+      if(changed) setData(o.id, d);
+    });
+   } catch(e) {
+     StorageAlert.trigger(e);
+   }
+  }
+  function safeGet(key, fallback){
+    try { const v=localStorage.getItem(key); return v===null? fallback : v; }
+    catch(e){ StorageAlert.trigger(e); return fallback; }
+  }
+  function safeSet(key, value){
+    try { localStorage.setItem(key, value); return true; }
+    catch(e){ StorageAlert.trigger(e); return false; }
+  }
+  const getOffices=function(){ return JSON.parse(safeGet(OFFICES_KEY,'[]')); };
+  const setOffices=function(v){ safeSet(OFFICES_KEY, JSON.stringify(v)); };
+  const getUsers=function(){ return JSON.parse(safeGet(USERS_KEY,'[]')); };
+  const setUsers=function(v){ safeSet(USERS_KEY, JSON.stringify(v)); };
+  const getData=function(officeId){ return JSON.parse(safeGet(DATA_PREFIX+officeId,'null'))||seedOfficeData(); };
+  const setData=function(officeId,data){ safeSet(DATA_PREFIX+officeId, JSON.stringify(data)); };
+  const addOffice=function(name,code){
+    const offices=getOffices();
+    const id='off_'+name.toLowerCase().replace(/[^a-z0-9]+/g,'_')+'_'+Util.uid();
+    offices.push({id:id,name:name,code:code,status:'Active'});
+    setOffices(offices);
+    setData(id, seedOfficeData());
+    return id;
+  };
+  const toggleOfficeStatus=function(officeId){
+    const offices=getOffices();
+    const o=offices.find(function(x){return x.id===officeId;});
+    if(o){ o.status = (o.status==='Active')?'Closed':'Active'; setOffices(offices); }
+  };
+  const exportBackup=function(){
+    const offices=getOffices();
+    const bundle={ exportedAt:new Date().toISOString(), offices:offices, users:getUsers(), data:{} };
+    offices.forEach(function(o){ bundle.data[o.id]=getData(o.id); });
+    return bundle;
+  };
+  const importBackup=function(bundle){
+    if(!bundle || !Array.isArray(bundle.offices) || !Array.isArray(bundle.users) || !bundle.data){
+      throw new Error('This file does not look like a valid dashboard backup.');
+    }
+    setOffices(bundle.offices);
+    setUsers(bundle.users);
+    Object.keys(bundle.data).forEach(function(officeId){ setData(officeId, bundle.data[officeId]); });
+  };
+  return {init:init, getOffices:getOffices, setOffices:setOffices, getUsers:getUsers, setUsers:setUsers, getData:getData, setData:setData,
+    addOffice:addOffice, toggleOfficeStatus:toggleOfficeStatus, exportBackup:exportBackup, importBackup:importBackup};
+})();
+
+/* ============================================================
+   AUTH
+============================================================ */
+const Auth = (function(){
+  let session=null;
+  function login(){
+    const mobile=document.getElementById('loginMobile').value.trim();
+    const pass=document.getElementById('loginPass').value;
+    const user=Store.getUsers().find(function(u){ return u.mobile===mobile && u.password===pass; });
+    const err=document.getElementById('loginErr');
+    if(!user){ err.textContent='Invalid mobile number or password.'; return; }
+    if(user.active===false){ err.textContent='This login has been disabled. Contact your administrator.'; return; }
+    if(user.role==='office'){
+      const office=Store.getOffices().find(function(o){ return o.id===user.officeId; });
+      if(office && office.status==='Closed'){ err.textContent='This branch is closed. Contact your administrator.'; return; }
+    }
+    err.textContent='';
+    session={mobile:user.mobile, role:user.role, officeId:user.officeId||null, name:user.name};
+    sessionStorage.setItem('lmfd_session', JSON.stringify(session));
+    App.start(session);
+  }
+  function logout(){
+    session=null;
+    sessionStorage.removeItem('lmfd_session');
+    sessionStorage.removeItem('lmfd_impersonator_backup');
+    document.getElementById('app').style.display='none';
+    document.getElementById('loginScreen').style.display='block';
+    document.getElementById('loginMobile').value='';
+    document.getElementById('loginPass').value='';
+    LandingUI.closeLogin();
+  }
+  function restore(){
+    const raw=sessionStorage.getItem('lmfd_session');
+    if(raw){ session=JSON.parse(raw); return session; }
+    return null;
+  }
+  function impersonate(mobile){
+    if(!session || session.role!=='super'){ alert('Only Super Admin can switch accounts.'); return; }
+    const target=Store.getUsers().find(function(u){ return u.mobile===mobile; });
+    if(!target){ alert('Login not found.'); return; }
+    if(target.active===false){ alert('That login is disabled. Enable it first.'); return; }
+    sessionStorage.setItem('lmfd_impersonator_backup', JSON.stringify(session));
+    session={mobile:target.mobile, role:target.role, officeId:target.officeId||null, name:target.name, impersonating:true};
+    sessionStorage.setItem('lmfd_session', JSON.stringify(session));
+    App.start(session);
+  }
+  function returnToSuper(){
+    const raw=sessionStorage.getItem('lmfd_impersonator_backup');
+    if(!raw) return;
+    session=JSON.parse(raw);
+    sessionStorage.setItem('lmfd_session', JSON.stringify(session));
+    sessionStorage.removeItem('lmfd_impersonator_backup');
+    App.start(session);
+  }
+  function isImpersonating(){
+    return !!sessionStorage.getItem('lmfd_impersonator_backup');
+  }
+  return {login:login, logout:logout, restore:restore, get:function(){ return session; },
+    impersonate:impersonate, returnToSuper:returnToSuper, isImpersonating:isImpersonating};
+})();
+
+/* ============================================================
+   APP / ROUTER
+============================================================ */
+const UIState = (function(){
+  let costOfficeId=null;
+  let facilityFilter=null; // Set of office ids to show in ALL-branches facility view; null = show all
+  return {
+    getCostOffice:function(){ return costOfficeId; },
+    setCostOffice:function(id){ costOfficeId=id; },
+    getFacilityFilter:function(){ return facilityFilter; },
+    setFacilityFilter:function(set){ facilityFilter=set; },
+  };
+})();
+
+const App=(function(){
+  let currentOffice=null;
+  let currentRoute='dashboard';
+  let MODULES=[];
+
+  function baseModules(session){
+    const mods=[
+      {key:'dashboard', label:'Dashboard Overview', icon:'\u{1F4CA}'},
+      {key:'ops', label:'Operations Dashboard', icon:'\u{1F69A}'},
+      {key:'reports', label:'Industry Reports', icon:'\u{1F30D}'},
+      {key:'orgchart', label:'Org Chart', icon:'\u{1F465}'},
+      {key:'facility', label:'Facility Checklist (IPP)', icon:'\u{1F3E2}'},
+      {key:'assets', label:'Asset Audit', icon:'\u{1F4E6}'},
+      {key:'manpower', label:'Sanctioned Manpower', icon:'\u{1F4CB}'},
+      {key:'peopleorg', label:'People & Organization', icon:'\u{1F4C4}'},
+    ];
+    if(session.role==='super') mods.push({key:'admin', label:'Admin / Branch Setup', icon:'\u2699\uFE0F'});
+    return mods;
+  }
+
+  function start(session){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('userLabel').textContent = session.name;
+    const roleTag=document.getElementById('roleTagEl');
+    roleTag.textContent = session.role==='super'?'Super Admin':'Office / Manager';
+    roleTag.className = 'roleTag '+session.role;
+    const impBanner=document.getElementById('impersonateBanner');
+    if(Auth.isImpersonating()){
+      impBanner.style.display='inline-flex';
+      impBanner.innerHTML='<span class="pill Shortage" style="margin-right:8px;">Viewing as this account</span>'
+        + '<button class="btn small" onclick="Auth.returnToSuper()">\u2190 Return to Super Admin</button>';
+    } else {
+      impBanner.style.display='none';
+      impBanner.innerHTML='';
+    }
+
+    const offices=Store.getOffices();
+    currentOffice = session.role==='super' ? (offices[0]? offices[0].id:null) : session.officeId;
+    MODULES = baseModules(session);
+    renderOfficeSelector(session, offices);
+    renderNav();
+    navigate('dashboard');
+  }
+
+  function renderOfficeSelector(session, offices){
+    const wrap=document.getElementById('officeSelWrap');
+    if(session.role==='super'){
+      wrap.innerHTML = '<select id="officeSelect" onchange="App.switchOffice(this.value)">'
+        + offices.map(function(o){ return '<option value="'+o.id+'" '+(o.id===currentOffice?'selected':'')+'>'+o.name+' ('+o.code+')'+(o.status==='Closed'?' \u2014 Closed':'')+'</option>'; }).join('')
+        + '<option value="ALL" '+(currentOffice==='ALL'?'selected':'')+'>All Branches (Aggregate)</option></select>';
+    } else {
+      const o=offices.find(function(x){ return x.id===currentOffice; });
+      wrap.innerHTML = '<div style="font-weight:700;color:var(--navy);">'+(o?o.name:'')+' Branch'+(o&&o.status==='Closed'?' <span class="pill No" style="margin-left:6px;">Closed</span>':'')+'</div>';
+    }
+    document.getElementById('brandOffice').textContent = currentOffice==='ALL' ? 'All Branches' : ((offices.find(function(o){return o.id===currentOffice;})||{}).name || '');
+  }
+
+  function switchOffice(id){
+    currentOffice=id;
+    const offices=Store.getOffices();
+    document.getElementById('brandOffice').textContent = id==='ALL' ? 'All Branches' : ((offices.find(function(o){return o.id===id;})||{}).name||'');
+    navigate(currentRoute);
+  }
+
+  function renderNav(){
+    const nav=document.getElementById('navList');
+    nav.innerHTML = MODULES.map(function(m){ return '<div class="navitem" id="nav_'+m.key+'" onclick="App.navigate(\''+m.key+'\')"><span class="navIcon">'+m.icon+'</span><span class="lbl">'+m.label+'</span></div>'; }).join('');
+    const active=document.getElementById('nav_'+currentRoute);
+    if(active) active.classList.add('active');
+  }
+
+  function navigate(route){
+    currentRoute=route;
+    document.querySelectorAll('.navitem').forEach(function(n){ n.classList.remove('active'); });
+    const active=document.getElementById('nav_'+route);
+    if(active) active.classList.add('active');
+    const c=document.getElementById('content');
+    const role=Auth.get().role;
+    if(route==='dashboard') c.innerHTML = Views.dashboard(currentOffice);
+    else if(route==='ops') c.innerHTML = Views.operations(currentOffice, role);
+    else if(route==='reports') c.innerHTML = Views.reports(currentOffice, role);
+    else if(route==='orgchart') c.innerHTML = Views.orgChart(currentOffice, role);
+    else if(route==='facility') c.innerHTML = Views.facility(currentOffice, role);
+    else if(route==='assets') c.innerHTML = Views.assets(currentOffice, role);
+    else if(route==='manpower') c.innerHTML = Views.manpower(currentOffice, role);
+    else if(route==='peopleorg') c.innerHTML = Views.peopleOrg(currentOffice, role);
+    else if(route==='admin') c.innerHTML = Views.admin();
+  }
+
+  function getOffice(){ return currentOffice; }
+
+  function refreshOfficeSelector(){
+    const session=Auth.get();
+    const offices=Store.getOffices();
+    if(session.role==='super' && currentOffice!=='ALL' && !offices.find(function(o){return o.id===currentOffice;})){
+      currentOffice = offices[0] ? offices[0].id : 'ALL';
+    }
+    renderOfficeSelector(session, offices);
+  }
+
+  return {start:start, navigate:navigate, switchOffice:switchOffice, getOffice:getOffice, refreshOfficeSelector:refreshOfficeSelector};
+})();
+
+/* ============================================================
+   AGGREGATION HELPERS (for 'ALL' branches view)
+============================================================ */
+function opsEntryCost(e, settings){
+  settings = settings || {ratePerKm:0, ratePerDelivery:0, fixedCostPerWorkingDay:0};
+  return Number(e.kmsRun||0)*Number(settings.ratePerKm||0) +
+         Number(e.delivered||0)*Number(settings.ratePerDelivery||0) +
+         Number(settings.fixedCostPerWorkingDay||0);
+}
+function aggregateOpsAcrossOffices(){
+  const offices=Store.getOffices();
+  const rows=[];
+  offices.forEach(function(o){
+    const d=Store.getData(o.id);
+    const totInward=d.opsEntries.reduce(function(s,e){ return s+Number(e.inward||0); },0);
+    const totDelivered=d.opsEntries.reduce(function(s,e){ return s+Number(e.delivered||0); },0);
+    const totCOD=d.opsEntries.reduce(function(s,e){ return s+Number(e.codCash||0); },0);
+    const totKms=d.opsEntries.reduce(function(s,e){ return s+Number(e.kmsRun||0); },0);
+    const totCost=d.opsEntries.reduce(function(s,e){ return s+opsEntryCost(e,d.opsSettings); },0);
+    rows.push({id:o.id, name:o.name, status:o.status, totInward:totInward, totDelivered:totDelivered, totCOD:totCOD, totKms:totKms, totCost:totCost});
+  });
+  return rows;
+}
+
+/* ============================================================
+   VIEWS
+============================================================ */
+const Views=(function(){
+
+  function officeName(id){
+    if(id==='ALL') return 'All Branches';
+    const o=Store.getOffices().find(function(x){return x.id===id;}); return o?o.name:'';
+  }
+
+  function branchSummary(officeId){
+    const d=Store.getData(officeId);
+    const facDone = d.facility.filter(function(f){return f.status==='Completed';}).length;
+    const facTotal = d.facility.length;
+    const sanc = d.manpower.reduce(function(s,m){return s+Number(m.sanc||0);},0);
+    const onroll = d.manpower.reduce(function(s,m){return s+Number(m.onroll||0);},0);
+    const shortfall = d.assets.reduce(function(s,a){return s+(Number(a.req||0)-Number(a.avail||0));},0);
+    const orgFilled = d.orgChart.filter(function(o){return o.name && o.name.trim();}).length;
+    const orgTotal = d.orgChart.length;
+    const totInward=d.opsEntries.reduce(function(s,e){return s+Number(e.inward||0);},0);
+    const totDelivered=d.opsEntries.reduce(function(s,e){return s+Number(e.delivered||0);},0);
+    const totCOD=d.opsEntries.reduce(function(s,e){return s+Number(e.codCash||0);},0);
+    const totKms=d.opsEntries.reduce(function(s,e){return s+Number(e.kmsRun||0);},0);
+    const totCost=d.opsEntries.reduce(function(s,e){return s+opsEntryCost(e,d.opsSettings);},0);
+    const peopleOrgDone=d.peopleOrg.filter(function(p){return p.status==='Completed';}).length;
+    return {
+      officeId:officeId, facDone:facDone, facTotal:facTotal, facPct: facTotal? Math.round(facDone/facTotal*100):0,
+      sanc:sanc, onroll:onroll, fillPct: sanc? Math.round(onroll/sanc*100):0,
+      shortfall:shortfall, assetsTotal:d.assets.length,
+      orgFilled:orgFilled, orgTotal:orgTotal,
+      totInward:totInward, totDelivered:totDelivered, successPct: totInward? Math.round(totDelivered/totInward*100):0,
+      totCOD:totCOD, totKms:totKms, totCost:totCost,
+      peopleOrgDone:peopleOrgDone, peopleOrgTotal:d.peopleOrg.length,
+      notStarted:d.facility.filter(function(f){return f.status==='Not Started';}).length,
+      shortageAssets:d.assets.filter(function(a){return a.status==='Shortage';}).length,
+      opsCount:d.opsEntries.length,
+    };
+  }
+
+  function generateInsights(officeId){
+    const s=branchSummary(officeId);
+    const insights=[];
+    if(s.facPct<30){
+      insights.push({level:'bad', text:'Facility readiness is critically low at '+s.facPct+'% ('+s.facDone+'/'+s.facTotal+' items). Prioritize Civil & Layout and Safety & Security categories first \u2014 these gate everything else.'});
+    } else if(s.facPct<80){
+      insights.push({level:'warn', text:'Facility checklist is '+s.facPct+'% complete. '+(s.facTotal-s.facDone)+' items remain \u2014 on track but not yet audit-ready.'});
+    } else {
+      insights.push({level:'good', text:'Facility checklist is '+s.facPct+'% complete \u2014 close to audit-ready.'});
+    }
+    if(s.sanc>0){
+      if(s.fillPct<50){
+        insights.push({level:'bad', text:'Manpower fill rate is only '+s.fillPct+'% ('+s.onroll+'/'+s.sanc+'). '+(s.sanc-s.onroll)+' positions vacant against sanctioned strength \u2014 hiring should be the top operational priority this month.'});
+      } else if(s.fillPct<90){
+        insights.push({level:'warn', text:'Manpower fill rate is '+s.fillPct+'%, with '+(s.sanc-s.onroll)+' positions still vacant.'});
+      } else {
+        insights.push({level:'good', text:'Manpower is fully or near-fully staffed at '+s.fillPct+'% fill rate.'});
+      }
+    }
+    if(s.shortfall>0){
+      insights.push({level:'bad', text:'Asset shortfall of '+s.shortfall+' units detected across '+s.assetsTotal+' tracked items \u2014 procurement/audit needed before operations scale further.'});
+    } else {
+      insights.push({level:'good', text:'No asset shortfall currently recorded across '+s.assetsTotal+' tracked items.'});
+    }
+    if(s.opsCount===0){
+      insights.push({level:'info', text:'No daily operations entries logged yet. Start logging Inward/Delivered/COD/KMs on the Operations Dashboard to unlock delivery-success and cost trend insights here.'});
+    } else {
+      if(s.successPct<80){
+        insights.push({level:'bad', text:'Delivery success rate is '+s.successPct+'% ('+s.totDelivered+'/'+s.totInward+') across '+s.opsCount+' logged entries \u2014 below the 80% healthy threshold. Investigate top failure reasons and consider call-before-attempt discipline.'});
+      } else {
+        insights.push({level:'good', text:'Delivery success rate is '+s.successPct+'% across '+s.opsCount+' logged entries \u2014 above the 80% healthy threshold.'});
+      }
+    }
+    if(s.orgTotal>0){
+      if(s.orgFilled<s.orgTotal){
+        insights.push({level:'info', text:'Org chart is '+Math.round(s.orgFilled/s.orgTotal*100)+'% complete \u2014 '+(s.orgTotal-s.orgFilled)+' of '+s.orgTotal+' positions still show as Unassigned.'});
+      } else {
+        insights.push({level:'good', text:'Org chart is fully populated \u2014 every sanctioned position has a name assigned.'});
+      }
+    }
+    return insights;
+  }
+
+  function insightPill(level){
+    if(level==='bad') return {cls:'bad', icon:'\u26A0'};
+    if(level==='warn') return {cls:'warn', icon:'\u26A0'};
+    if(level==='good') return {cls:'good', icon:'\u2713'};
+    return {cls:'', icon:'\u2139'};
+  }
+
+  function misAndInsightsInner(officeId){
+    const s=branchSummary(officeId);
+    const insights=generateInsights(officeId);
+    const mis='<div class="tblWrap"><table><thead><tr><th>MIS Area</th><th>Metric</th><th>Value</th></tr></thead><tbody>'
+      + [
+          ['Operations', 'Total Inward', s.totInward],
+          ['Operations', 'Total Delivered', s.totDelivered],
+          ['Operations', 'Delivery Success %', s.successPct+'%'],
+          ['Operations', 'COD Collected', Util.inr(s.totCOD)],
+          ['Operations', 'Total KMs Run', s.totKms],
+          ['Operations', 'Total Operating Cost', Util.inr(s.totCost)],
+          ['Manpower', 'Sanctioned Strength', s.sanc],
+          ['Manpower', 'On-Roll (Actual)', s.onroll],
+          ['Manpower', 'Vacancy', s.sanc-s.onroll],
+          ['Manpower', 'Fill Rate %', s.fillPct+'%'],
+          ['Facility', 'Checklist Completed', s.facDone+' / '+s.facTotal],
+          ['Facility', 'Completion %', s.facPct+'%'],
+          ['Assets', 'Total Shortfall (units)', s.shortfall],
+          ['Assets', 'Marked Shortage', s.shortageAssets],
+          ['Org Chart', 'Positions Filled', s.orgFilled+' / '+s.orgTotal],
+          ['Handover (People & Org)', 'Items Completed', s.peopleOrgDone+' / '+s.peopleOrgTotal],
+        ].map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td class="mono">'+r[2]+'</td></tr>'; }).join('')
+      + '</tbody></table></div>';
+    const insightCards='<div class="insightGrid">'
+      + insights.map(function(ins){
+          const p=insightPill(ins.level);
+          return '<div class="insightCard'+(p.cls?' '+p.cls:'')+'" style="border-left-color:'
+            +(ins.level==='bad'?'var(--red)':ins.level==='warn'?'var(--amber)':ins.level==='good'?'var(--green)':'var(--navy)')+';">'
+            + '<span class="icon">'+p.icon+'</span><p>'+ins.text+'</p></div>';
+        }).join('')
+      + '</div>';
+    return mis + insightCards;
+  }
+
+  function dashboard(officeId){
+    if(officeId==='ALL'){
+      const offices=Store.getOffices();
+      const sums=offices.map(function(o){ return Object.assign({name:o.name, code:o.code, status:o.status}, branchSummary(o.id)); });
+      const tot=function(key){ return sums.reduce(function(s,r){return s+r[key];},0); };
+      const facPct = tot('facTotal')? Math.round(tot('facDone')/tot('facTotal')*100):0;
+      const fillPct = tot('sanc')? Math.round(tot('onroll')/tot('sanc')*100):0;
+      const orgPct = tot('orgTotal')? Math.round(tot('orgFilled')/tot('orgTotal')*100):0;
+      const successPct = tot('totInward')? Math.round(tot('totDelivered')/tot('totInward')*100):0;
+      return '<h1 class="pageTitle">Dashboard Overview \u2014 All Branches</h1>'
+        + '<p class="pageSub">Combined facility, manpower, asset, org chart and operations performance across every branch</p>'
+        + '<div class="cardGrid">'
+        + '<div class="kpi '+(facPct<50?'bad':facPct<90?'warn':'good')+'"><div class="lbl">Facility Checklist</div><div class="val">'+facPct+'%</div><div class="sub">'+tot('facDone')+' / '+tot('facTotal')+' items completed</div></div>'
+        + '<div class="kpi '+(fillPct<70?'bad':fillPct<100?'warn':'good')+'"><div class="lbl">Manpower Fill Rate</div><div class="val">'+fillPct+'%</div><div class="sub">'+tot('onroll')+' on-roll of '+tot('sanc')+' sanctioned</div></div>'
+        + '<div class="kpi '+(tot('shortfall')>0?'bad':'good')+'"><div class="lbl">Asset Shortfall</div><div class="val">'+tot('shortfall')+'</div><div class="sub">units short across all branches</div></div>'
+        + '<div class="kpi '+(orgPct<100?'warn':'good')+'"><div class="lbl">Org Chart Filled</div><div class="val">'+tot('orgFilled')+'/'+tot('orgTotal')+'</div><div class="sub">positions with a name assigned</div></div>'
+        + '<div class="kpi"><div class="lbl">Total Inward</div><div class="val">'+tot('totInward')+'</div></div>'
+        + '<div class="kpi '+(successPct<80?'warn':'good')+'"><div class="lbl">Delivery Success %</div><div class="val">'+successPct+'%</div><div class="sub">'+tot('totDelivered')+' of '+tot('totInward')+' delivered</div></div>'
+        + '<div class="kpi"><div class="lbl">COD Collected</div><div class="val">'+Util.inr(tot('totCOD'))+'</div></div>'
+        + '<div class="kpi"><div class="lbl">Total KMs Run</div><div class="val">'+tot('totKms')+'</div></div>'
+        + '<div class="kpi"><div class="lbl">Total Operating Cost</div><div class="val">'+Util.inr(tot('totCost'))+'</div></div>'
+        + '</div>'
+        + '<h3 style="color:var(--navy);margin:14px 0 8px;">Branch-by-Branch Breakdown</h3>'
+        + '<div class="tblWrap"><table><thead><tr><th>Branch</th><th>Status</th><th>Facility%</th><th>Manpower Fill%</th><th>Asset Shortfall</th>'
+        + '<th>Org Filled</th><th>Inward</th><th>Delivered</th><th>Success%</th><th>COD</th><th>KMs</th><th>Cost</th></tr></thead><tbody>'
+        + sums.map(function(r){
+            return '<tr><td>'+r.name+' ('+r.code+')</td><td><span class="pill '+(r.status==='Closed'?'No':'Yes')+'">'+(r.status||'Active')+'</span></td>'
+              + '<td class="mono">'+r.facPct+'%</td><td class="mono">'+r.fillPct+'%</td><td class="mono">'+r.shortfall+'</td>'
+              + '<td class="mono">'+r.orgFilled+'/'+r.orgTotal+'</td><td class="mono">'+r.totInward+'</td><td class="mono">'+r.totDelivered+'</td>'
+              + '<td class="mono">'+r.successPct+'%</td><td class="mono">'+Util.inr(r.totCOD)+'</td><td class="mono">'+r.totKms+'</td><td class="mono">'+Util.inr(r.totCost)+'</td></tr>';
+          }).join('')
+        + '</tbody></table></div>'
+        + '<div class="panel"><h3>Quick Notes \u2014 All Branches (combined)</h3><div class="miniList">'
+        + '<div><span>Facility items not started</span><b>'+tot('notStarted')+'</b></div>'
+        + '<div><span>Assets marked Shortage</span><b>'+tot('shortageAssets')+'</b></div>'
+        + '<div><span>People & Org items pending</span><b>'+(tot('peopleOrgTotal')-tot('peopleOrgDone'))+'</b></div>'
+        + '<div><span>Ops entries logged</span><b>'+tot('opsCount')+'</b></div>'
+        + '</div></div>'
+        + '<h3 style="color:var(--navy);margin:14px 0 8px;">Facility Checklist Status \u2014 by Branch</h3>'
+        + '<div class="tblWrap"><table><thead><tr><th>Branch</th><th>Completed</th><th>In Progress</th><th>Not Started</th><th>NA</th><th>Total Items</th><th>% Complete</th></tr></thead><tbody>'
+        + offices.map(function(o){
+            const d=Store.getData(o.id);
+            const c=d.facility.filter(function(f){return f.status==='Completed';}).length;
+            const ip=d.facility.filter(function(f){return f.status==='In Progress';}).length;
+            const ns=d.facility.filter(function(f){return f.status==='Not Started';}).length;
+            const na=d.facility.filter(function(f){return f.status==='NA';}).length;
+            const pct=d.facility.length? Math.round(c/d.facility.length*100):0;
+            return '<tr><td>'+o.name+'</td><td class="mono">'+c+'</td><td class="mono">'+ip+'</td><td class="mono">'+ns+'</td><td class="mono">'+na+'</td><td class="mono">'+d.facility.length+'</td><td class="mono">'+pct+'%</td></tr>';
+          }).join('')
+        + '</tbody></table></div>';
+    }
+    const s=branchSummary(officeId);
+    return '<h1 class="pageTitle">Dashboard Overview \u2014 '+officeName(officeId)+'</h1>'
+      + '<p class="pageSub">Live snapshot across all modules for this branch</p>'
+      + '<div class="cardGrid">'
+      + '<div class="kpi '+(s.facPct<50?'bad':s.facPct<90?'warn':'good')+'"><div class="lbl">Facility Checklist</div><div class="val">'+s.facPct+'%</div><div class="sub">'+s.facDone+' / '+s.facTotal+' items completed</div></div>'
+      + '<div class="kpi '+(s.fillPct<70?'bad':s.fillPct<100?'warn':'good')+'"><div class="lbl">Manpower Fill Rate</div><div class="val">'+s.fillPct+'%</div><div class="sub">'+s.onroll+' on-roll of '+s.sanc+' sanctioned</div></div>'
+      + '<div class="kpi '+(s.shortfall>0?'bad':'good')+'"><div class="lbl">Asset Shortfall</div><div class="val">'+s.shortfall+'</div><div class="sub">units short across '+s.assetsTotal+' asset types</div></div>'
+      + '<div class="kpi '+(s.orgFilled<s.orgTotal?'warn':'good')+'"><div class="lbl">Org Chart Filled</div><div class="val">'+s.orgFilled+'/'+s.orgTotal+'</div><div class="sub">positions with a name assigned</div></div>'
+      + '<div class="kpi '+(s.successPct<80?'warn':'good')+'"><div class="lbl">Delivery Success %</div><div class="val">'+s.successPct+'%</div><div class="sub">'+s.totDelivered+' of '+s.totInward+' inward delivered</div></div>'
+      + '<div class="kpi"><div class="lbl">COD Collected</div><div class="val">'+Util.inr(s.totCOD)+'</div></div>'
+      + '<div class="kpi"><div class="lbl">Total KMs Run</div><div class="val">'+s.totKms+'</div></div>'
+      + '<div class="kpi"><div class="lbl">Total Operating Cost</div><div class="val">'+Util.inr(s.totCost)+'</div></div>'
+      + '</div>'
+      + '<div class="panel"><h3>Quick Notes</h3><div class="miniList">'
+      + '<div><span>Facility items not started</span><b>'+s.notStarted+'</b></div>'
+      + '<div><span>Assets marked Shortage</span><b>'+s.shortageAssets+'</b></div>'
+      + '<div><span>People & Org items pending</span><b>'+(s.peopleOrgTotal-s.peopleOrgDone)+'</b></div>'
+      + '<div><span>Ops entries logged</span><b>'+s.opsCount+'</b></div>'
+      + '</div></div>';
+  }
+
+  function orgChartInner(officeId, role){
+    const d=Store.getData(officeId);
+    const canEdit = role==='super';
+    const byLevel = function(lvl){ return d.orgChart.filter(function(o){return o.level===lvl;}); };
+    const node=function(o,cls){
+      return '<div class="orgNode '+cls+'"><div class="t">'+o.desig+'</div><div class="n">'+(o.name? o.name : '<i style="opacity:.6">Unassigned</i>')+'</div><div class="c">'+(o.contact||'')+'</div></div>';
+    };
+    const tree = '<div class="orgTree">'
+      + '<div class="orgLevel">'+byLevel(1).map(function(o){return node(o,'l1');}).join('')+'</div>'
+      + '<div class="connector"></div>'
+      + '<div class="orgLevel">'+byLevel(2).map(function(o){return node(o,'l2');}).join('')+'</div>'
+      + '<div class="connector"></div>'
+      + '<div class="orgLevel">'+byLevel(3).map(function(o){return node(o,'l3');}).join('')+'</div>'
+      + '</div>';
+    const fld=function(id,field,val){
+      return canEdit
+        ? '<input type="text" value="'+(val||'')+'" onchange="Actions.updateField2(\''+officeId+'\',\'orgChart\',\''+id+'\',\''+field+'\',this.value)">'
+        : '<input type="text" value="'+(val||'')+'" readonly>';
+    };
+    const rows = d.orgChart.map(function(o){
+      return '<tr><td>'+o.desig+'</td><td>'+o.reportsTo+'</td>'
+        + '<td>'+fld(o.id,'name',o.name)+'</td>'
+        + '<td>'+fld(o.id,'contact',o.contact)+'</td>'
+        + '<td>'+fld(o.id,'email',o.email)+'</td>'
+        + '<td>'+fld(o.id,'remarks',o.remarks)+'</td></tr>';
+    }).join('');
+    return tree + '<div class="tblWrap"><table><thead><tr><th>Designation</th><th>Reports To</th><th>Name</th><th>Contact</th><th>Email</th><th>Remarks</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
+  function orgChart(officeId, role){
+    const editNote = role==='super'
+      ? 'Editable here. Office/Manager logins see this read-only \u2014 it only changes when Super Admin updates it.'
+      : 'Read-only. Names and details here are set by Super Admin and will update automatically when changed.';
+    if(officeId==='ALL'){
+      const offices=Store.getOffices();
+      return '<h1 class="pageTitle">Organisation Chart \u2014 All Branches</h1>'
+        + '<p class="pageSub">Expand a branch to view its hierarchy. '+editNote+'</p>'
+        + offices.map(function(o){
+            const d=Store.getData(o.id);
+            const filled=d.orgChart.filter(function(x){return x.name && x.name.trim();}).length;
+            return '<details class="branchSection" data-office="'+o.id+'"><summary>'+o.name+' ('+o.code+')<span class="stat">'+filled+'/'+d.orgChart.length+' positions filled</span></summary>'
+              + '<div class="branchBody">'+orgChartInner(o.id, role)+'</div></details>';
+          }).join('');
+    }
+    return '<h1 class="pageTitle">Organisation Chart \u2014 '+officeName(officeId)+'</h1>'
+      + '<p class="pageSub">'+editNote+'</p>'
+      + orgChartInner(officeId, role);
+  }
+
+  function facilityInner(officeId, role){
+    const d=Store.getData(officeId);
+    const statusOpts=['Not Started','In Progress','Completed','NA'];
+    const verifyOpts=['Yes','No','Partial','NA'];
+    const canManage = role==='super';
+    let lastCat=null, rows='';
+    d.facility.forEach(function(f){
+      if(f.cat!==lastCat){ rows+='<tr class="catRow"><td colspan="'+(canManage?7:6)+'">'+f.cat+'</td></tr>'; lastCat=f.cat; }
+      rows += '<tr><td>'+f.item+'<div style="color:var(--grey);font-size:10px;margin-top:1px;">'+f.std+'</div></td>'
+        + '<td><select onchange="Actions.updateField2(\''+officeId+'\',\'facility\',\''+f.id+'\',\'status\',this.value)">'
+        + statusOpts.map(function(s){return '<option '+(f.status===s?'selected':'')+'>'+s+'</option>';}).join('') + '</select></td>'
+        + '<td><select onchange="Actions.updateField2(\''+officeId+'\',\'facility\',\''+f.id+'\',\'verified\',this.value)">'
+        + verifyOpts.map(function(s){return '<option '+(f.verified===s?'selected':'')+'>'+s+'</option>';}).join('') + '</select></td>'
+        + '<td><input type="text" value="'+(f.remarks||'')+'" onchange="Actions.updateField2(\''+officeId+'\',\'facility\',\''+f.id+'\',\'remarks\',this.value)"></td>'
+        + '<td><input type="text" value="'+(f.responsible||'')+'" onchange="Actions.updateField2(\''+officeId+'\',\'facility\',\''+f.id+'\',\'responsible\',this.value)"></td>'
+        + '<td><span class="pill '+Util.pillClass(f.status)+'">'+f.status+'</span></td>'
+        + (canManage? '<td><button class="btn small danger" onclick="Actions.deleteChecklistItem(\''+officeId+'\',\'facility\',\''+f.id+'\')">Delete</button></td>' : '')
+        + '</tr>';
+    });
+    const addRow = canManage
+      ? '<div class="inlineForm" style="margin-bottom:10px;">'
+        + '<div><label>Category</label><input type="text" id="newFacCat_'+officeId+'" placeholder="e.g. Civil & Layout"></div>'
+        + '<div><label>Item</label><input type="text" id="newFacItem_'+officeId+'" placeholder="Checklist item name"></div>'
+        + '<div><label>Standard / Requirement</label><input type="text" id="newFacStd_'+officeId+'" placeholder="Optional"></div>'
+        + '<div><button class="btn primary" onclick="Actions.addChecklistItem(\''+officeId+'\',\'facility\')">Add Item</button></div>'
+        + '</div>'
+      : '';
+    return addRow + '<div class="tblWrap tall"><table><thead><tr><th style="width:28%">Checklist Item</th><th>Status</th><th>Verified</th><th>Remarks</th><th>Responsible</th><th>Flag</th>'+(canManage?'<th></th>':'')+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
+  function facility(officeId, role){
+    if(officeId==='ALL'){
+      const offices=Store.getOffices();
+      const filter=UIState.getFacilityFilter();
+      const visibleOffices = filter ? offices.filter(function(o){ return filter.has(o.id); }) : offices;
+      const checkboxes = offices.map(function(o){
+        const checked = !filter || filter.has(o.id);
+        return '<label style="display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:12px;font-weight:500;cursor:pointer;">'
+          + '<input type="checkbox" value="'+o.id+'" '+(checked?'checked':'')+' onchange="Actions.toggleFacilityFilter(\''+o.id+'\')"> '+o.name+'</label>';
+      }).join('');
+      return '<h1 class="pageTitle">Facility Checklist (IPP) \u2014 All Branches</h1>'
+        + '<p class="pageSub">Expand a branch to view or edit its facility checklist</p>'
+        + '<div class="panel" style="padding:10px 14px;"><b style="font-size:11.5px;color:var(--navy);margin-right:8px;">Show branches:</b>'+checkboxes+'</div>'
+        + (visibleOffices.length ? visibleOffices.map(function(o){
+            const d=Store.getData(o.id);
+            const done=d.facility.filter(function(f){return f.status==='Completed';}).length;
+            return '<details class="branchSection" data-office="'+o.id+'"><summary>'+o.name+' ('+o.code+')<span class="stat">'+done+'/'+d.facility.length+' completed</span></summary>'
+              + '<div class="branchBody">'+facilityInner(o.id, role)+'</div></details>';
+          }).join('') : '<div class="placeholderBox">No branches selected \u2014 tick at least one above.</div>');
+    }
+    return '<h1 class="pageTitle">Facility Checklist (IPP) \u2014 '+officeName(officeId)+'</h1>'
+      + '<p class="pageSub">Infrastructure & Physical Parameters \u2014 '+Store.getData(officeId).facility.length+' items. Editable by Super Admin and Office/Manager logins.</p>'
+      + facilityInner(officeId, role);
+  }
+
+  function assetsInner(officeId, role){
+    const d=Store.getData(officeId);
+    const statusOpts=['OK','Shortage','Excess','Damaged','Not Verified'];
+    let totalReq=0, totalAvail=0;
+    const canEditReq = role==='super';
+    const rows = d.assets.map(function(a){
+      totalReq+=Number(a.req||0); totalAvail+=Number(a.avail||0);
+      const shortfall = Number(a.req||0)-Number(a.avail||0);
+      const reqCell = canEditReq
+        ? '<input type="number" value="'+a.req+'" min="0" onchange="Actions.updateField2(\''+officeId+'\',\'assets\',\''+a.id+'\',\'req\',Number(this.value))">'
+        : '<input type="number" value="'+a.req+'" readonly>';
+      return '<tr><td>'+a.name+'</td><td>'+reqCell+'</td>'
+        + '<td><input type="number" value="'+a.avail+'" min="0" onchange="Actions.updateField2(\''+officeId+'\',\'assets\',\''+a.id+'\',\'avail\',Number(this.value))"></td>'
+        + '<td class="mono">'+shortfall+'</td>'
+        + '<td><select onchange="Actions.updateField2(\''+officeId+'\',\'assets\',\''+a.id+'\',\'status\',this.value)">'
+        + statusOpts.map(function(s){return '<option '+(a.status===s?'selected':'')+'>'+s+'</option>';}).join('') + '</select></td>'
+        + '<td><input type="date" value="'+(a.auditDate||'')+'" onchange="Actions.updateField2(\''+officeId+'\',\'assets\',\''+a.id+'\',\'auditDate\',this.value)"></td>'
+        + '<td><input type="text" value="'+(a.remarks||'')+'" onchange="Actions.updateField2(\''+officeId+'\',\'assets\',\''+a.id+'\',\'remarks\',this.value)"></td>'
+        + (canEditReq? '<td><button class="btn small danger" onclick="Actions.deleteAssetItem(\''+officeId+'\',\''+a.id+'\')">Delete</button></td>' : '')
+        + '</tr>';
+    }).join('');
+    const addRow = canEditReq
+      ? '<div class="inlineForm" style="margin-bottom:10px;">'
+        + '<div><label>Asset Name</label><input type="text" id="newAssetName_'+officeId+'" placeholder="e.g. Label Printer"></div>'
+        + '<div><button class="btn primary" onclick="Actions.addAssetItem(\''+officeId+'\')">Add Asset</button></div>'
+        + '</div>'
+      : '';
+    return addRow + '<div class="tblWrap"><table><thead><tr><th>Asset Item</th><th>Required</th><th>Available</th><th>Shortfall</th><th>Audit Status</th><th>Last Audit</th><th>Remarks</th>'+(canEditReq?'<th></th>':'')+'</tr></thead><tbody>'
+      + rows + '<tr class="totalRow"><td>Total</td><td class="mono">'+totalReq+'</td><td class="mono">'+totalAvail+'</td><td class="mono">'+(totalReq-totalAvail)+'</td><td colspan="'+(canEditReq?4:3)+'"></td></tr>'
+      + '</tbody></table></div>';
+  }
+
+  function assets(officeId, role){
+    if(officeId==='ALL'){
+      const offices=Store.getOffices();
+      return '<h1 class="pageTitle">Facility Asset Audit \u2014 All Branches</h1>'
+        + '<p class="pageSub">Expand a branch to view or edit its asset audit</p>'
+        + offices.map(function(o){
+            const d=Store.getData(o.id);
+            const short=d.assets.reduce(function(s,a){return s+(Number(a.req||0)-Number(a.avail||0));},0);
+            return '<details class="branchSection" data-office="'+o.id+'"><summary>'+o.name+' ('+o.code+')<span class="stat">'+short+' units short</span></summary>'
+              + '<div class="branchBody">'+assetsInner(o.id, role)+'</div></details>';
+          }).join('');
+    }
+    return '<h1 class="pageTitle">Facility Asset Audit \u2014 '+officeName(officeId)+'</h1>'
+      + '<p class="pageSub">'+(role==='super'? 'Required Qty is editable by Super Admin. Office/Manager fills Available Qty and audit fields.' : 'Required Qty is set by Super Admin (read-only here). Fill Available Qty and audit fields.')+'</p>'
+      + assetsInner(officeId, role);
+  }
+
+  function manpowerInner(officeId, role){
+    const d=Store.getData(officeId);
+    let totalSanc=0, totalOnroll=0;
+    const canEditSanc = role==='super';
+    const rows = d.manpower.map(function(m){
+      totalSanc+=Number(m.sanc||0); totalOnroll+=Number(m.onroll||0);
+      const vac = Number(m.sanc||0)-Number(m.onroll||0);
+      const fill = m.sanc? Math.round(Number(m.onroll||0)/Number(m.sanc||1)*100):0;
+      const sancCell = canEditSanc
+        ? '<input type="number" value="'+m.sanc+'" min="0" onchange="Actions.updateField2(\''+officeId+'\',\'manpower\',\''+m.id+'\',\'sanc\',Number(this.value))">'
+        : '<input type="number" value="'+m.sanc+'" readonly>';
+      const delCell = canEditSanc
+        ? '<td><button class="btn small danger" onclick="Actions.deleteManpowerRole(\''+officeId+'\',\''+m.id+'\')">Delete</button></td>'
+        : '';
+      return '<tr><td>'+m.role+'</td><td>'+m.type+'</td><td>'+sancCell+'</td>'
+        + '<td><input type="number" value="'+m.onroll+'" min="0" onchange="Actions.updateField2(\''+officeId+'\',\'manpower\',\''+m.id+'\',\'onroll\',Number(this.value))"></td>'
+        + '<td class="mono">'+vac+'</td><td class="mono">'+fill+'%</td>'
+        + '<td><input type="text" value="'+(m.shift||'')+'" onchange="Actions.updateField2(\''+officeId+'\',\'manpower\',\''+m.id+'\',\'shift\',this.value)"></td>'
+        + '<td><input type="text" value="'+(m.remarks||'')+'" onchange="Actions.updateField2(\''+officeId+'\',\'manpower\',\''+m.id+'\',\'remarks\',this.value)"></td>'
+        + delCell + '</tr>';
+    }).join('');
+    const totalFill = totalSanc? Math.round(totalOnroll/totalSanc*100):0;
+    const extraTh = canEditSanc? '<th></th>' : '';
+    const extraTotalTd = canEditSanc? '<td></td>' : '';
+    const addRolePanel = canEditSanc
+      ? '<div class="panel"><h3>Add Sanctioned Manpower Role</h3><div class="inlineForm">'
+        + '<div><label>Role / Designation</label><input type="text" id="newRoleName_'+officeId+'" placeholder="e.g. Night Shift Lead"></div>'
+        + '<div><label>Type</label><select id="newRoleType_'+officeId+'"><option>Onrole</option><option>Offrole</option><option>Vendor</option></select></div>'
+        + '<div><label>Sanctioned Count</label><input type="number" id="newRoleSanc_'+officeId+'" value="1" min="0"></div>'
+        + '<div><button class="btn primary" onclick="Actions.addManpowerRole(\''+officeId+'\')">Add Role</button></div>'
+        + '</div></div>'
+      : '';
+    return addRolePanel + '<div class="tblWrap"><table><thead><tr><th>Role</th><th>Type</th><th>Sanctioned</th><th>On-Roll</th><th>Vacancy</th><th>Fill %</th><th>Shift</th><th>Remarks</th>'+extraTh+'</tr></thead><tbody>'
+      + rows + '<tr class="totalRow"><td colspan="2">Total</td><td class="mono">'+totalSanc+'</td><td class="mono">'+totalOnroll+'</td><td class="mono">'+(totalSanc-totalOnroll)+'</td><td class="mono">'+totalFill+'%</td><td colspan="2"></td>'+extraTotalTd+'</tr>'
+      + '</tbody></table></div>';
+  }
+
+  function manpower(officeId, role){
+    if(officeId==='ALL'){
+      const offices=Store.getOffices();
+      return '<h1 class="pageTitle">Sanctioned Manpower \u2014 All Branches</h1>'
+        + '<p class="pageSub">Expand a branch to view or edit its manpower roster</p>'
+        + offices.map(function(o){
+            const d=Store.getData(o.id);
+            const sanc=d.manpower.reduce(function(s,m){return s+Number(m.sanc||0);},0);
+            const onroll=d.manpower.reduce(function(s,m){return s+Number(m.onroll||0);},0);
+            const fill=sanc? Math.round(onroll/sanc*100):0;
+            return '<details class="branchSection" data-office="'+o.id+'"><summary>'+o.name+' ('+o.code+')<span class="stat">'+fill+'% filled ('+onroll+'/'+sanc+')</span></summary>'
+              + '<div class="branchBody">'+manpowerInner(o.id, role)+'</div></details>';
+          }).join('');
+    }
+    return '<h1 class="pageTitle">Sanctioned Manpower \u2014 '+officeName(officeId)+'</h1>'
+      + '<p class="pageSub">'+(role==='super'? 'Sanctioned Count is editable by Super Admin. Office/Manager fills On-Roll actuals.' : 'Sanctioned Count is set by Super Admin (read-only here). Fill On-Roll actuals.')+'</p>'
+      + manpowerInner(officeId, role);
+  }
+
+  function peopleOrgInner(officeId, role){
+    const d=Store.getData(officeId);
+    const statusOpts=['Not Started','In Progress','Completed','NA'];
+    const verifyOpts=['Yes','No','Partial','NA'];
+    const canManage = role==='super';
+    let lastCat=null, rows='';
+    d.peopleOrg.forEach(function(p){
+      if(p.cat!==lastCat){ rows+='<tr class="catRow"><td colspan="'+(canManage?6:5)+'">'+p.cat+'</td></tr>'; lastCat=p.cat; }
+      rows += '<tr><td>'+p.item+'<div style="color:var(--grey);font-size:10px;margin-top:1px;">'+p.covers+'</div></td>'
+        + '<td><select onchange="Actions.updateField2(\''+officeId+'\',\'peopleOrg\',\''+p.id+'\',\'status\',this.value)">'
+        + statusOpts.map(function(s){return '<option '+(p.status===s?'selected':'')+'>'+s+'</option>';}).join('') + '</select></td>'
+        + '<td><select onchange="Actions.updateField2(\''+officeId+'\',\'peopleOrg\',\''+p.id+'\',\'verified\',this.value)">'
+        + verifyOpts.map(function(s){return '<option '+(p.verified===s?'selected':'')+'>'+s+'</option>';}).join('') + '</select></td>'
+        + '<td><input type="text" value="'+(p.remarks||'')+'" onchange="Actions.updateField2(\''+officeId+'\',\'peopleOrg\',\''+p.id+'\',\'remarks\',this.value)"></td>'
+        + '<td><input type="text" value="'+(p.responsible||'')+'" onchange="Actions.updateField2(\''+officeId+'\',\'peopleOrg\',\''+p.id+'\',\'responsible\',this.value)"></td>'
+        + (canManage? '<td><button class="btn small danger" onclick="Actions.deleteChecklistItem(\''+officeId+'\',\'peopleOrg\',\''+p.id+'\')">Delete</button></td>' : '')
+        + '</tr>';
+    });
+    const addRow = canManage
+      ? '<div class="inlineForm" style="margin-bottom:10px;">'
+        + '<div><label>Category</label><input type="text" id="newPplCat_'+officeId+'" placeholder="e.g. Process & SOP"></div>'
+        + '<div><label>Item</label><input type="text" id="newPplItem_'+officeId+'" placeholder="Handover item name"></div>'
+        + '<div><label>Covers</label><input type="text" id="newPplCovers_'+officeId+'" placeholder="Optional"></div>'
+        + '<div><button class="btn primary" onclick="Actions.addChecklistItem(\''+officeId+'\',\'peopleOrg\')">Add Item</button></div>'
+        + '</div>'
+      : '';
+    return addRow + '<div class="tblWrap tall"><table><thead><tr><th style="width:34%">Area</th><th>Status</th><th>Verified</th><th>Remarks</th><th>Responsible</th>'+(canManage?'<th></th>':'')+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
+  function peopleOrg(officeId, role){
+    if(officeId==='ALL'){
+      const offices=Store.getOffices();
+      return '<h1 class="pageTitle">People & Organization Handover \u2014 All Branches</h1>'
+        + '<p class="pageSub">Expand a branch to view or edit its handover checklist</p>'
+        + offices.map(function(o){
+            const d=Store.getData(o.id);
+            const done=d.peopleOrg.filter(function(p){return p.status==='Completed';}).length;
+            return '<details class="branchSection" data-office="'+o.id+'"><summary>'+o.name+' ('+o.code+')<span class="stat">'+done+'/'+d.peopleOrg.length+' completed</span></summary>'
+              + '<div class="branchBody">'+peopleOrgInner(o.id, role)+'</div></details>';
+          }).join('');
+    }
+    return '<h1 class="pageTitle">People & Organization Handover \u2014 '+officeName(officeId)+'</h1>'
+      + '<p class="pageSub">Charge handover checklist across all functional areas</p>'
+      + peopleOrgInner(officeId, role);
+  }
+
+  function reports(officeId, role){
+    const offices=Store.getOffices();
+    const misSection = officeId==='ALL'
+      ? offices.map(function(o){
+          const s=branchSummary(o.id);
+          return '<details class="branchSection" data-office="'+o.id+'"><summary>'+o.name+' ('+o.code+')<span class="stat">'+s.facPct+'% facility ready \u00b7 '+s.fillPct+'% staffed</span></summary>'
+            + '<div class="branchBody">'+misAndInsightsInner(o.id)+'</div></details>';
+        }).join('')
+      : misAndInsightsInner(officeId);
+    const misTitle = officeId==='ALL' ? 'MIS Summary & AI Insights \u2014 All Branches (expand a branch)' : 'MIS Summary & AI Insights \u2014 '+officeName(officeId);
+
+    return '<div class="sectionHead" style="margin-top:0;"><span class="dot"></span><h3>'+misTitle+'</h3></div>'
+      + '<div class="lockText" style="margin-bottom:10px;">MIS pulls live from this dashboard\u2019s own data (Ops, Manpower, Facility, Assets, Org Chart). Insights below are auto-generated from that same data against healthy-range thresholds \u2014 not external research.</div>'
+      + misSection
+
+      + '<div class="reportHero" style="margin-top:18px;">'
+      + '<h1>3PL Last-Mile Detailed Insights \u2014 Industry Benchmarks & Global Data</h1>'
+      + '<p>A working reference of how Amazon, Flipkart/Ekart, Delhivery, global carriers and China\u2019s network run last-mile \u2014 compiled from research across this dashboard\u2019s planning sessions.</p>'
+      + '<div class="tagRow"><span class="tag">MIS Summary</span><span class="tag">AI Insights</span><span class="tag">Global Benchmarks</span><span class="tag">India 3PL Landscape</span><span class="tag">Zero-Cost Levers</span><span class="tag">China Model</span></div>'
+      + '</div>'
+
+      + '<div class="statStrip">'
+      + '<div class="cell"><div class="n">98%</div><div class="l">Amazon On-Time Accuracy</div></div>'
+      + '<div class="cell"><div class="n">20-40%</div><div class="l">India NDR Rate Range</div></div>'
+      + '<div class="cell"><div class="n">25-30%</div><div class="l">Failed Orders \u2192 RTO (India)</div></div>'
+      + '<div class="cell"><div class="n">~35%</div><div class="l">Delhivery+Ecom Express Share</div></div>'
+      + '<div class="cell"><div class="n">$17.20</div><div class="l">Avg. Cost of 1 Failed Delivery (US)</div></div>'
+      + '</div>'
+
+      + '<div class="sectionHead"><span class="dot"></span><h3>Company Scale, Shipments & Revenue \u2014 Publicly Disclosed Numbers</h3></div>'
+      + '<div class="lockText" style="margin-bottom:8px;">Only figures each company has actually published are shown. Amazon India and Flipkart/Ekart do not disclose last-mile revenue as a separate line item, so those rows are marked accordingly rather than estimated.</div>'
+      + '<div class="tblWrap"><table><thead><tr><th>Company</th><th>Period</th><th>Shipments</th><th>Revenue</th><th>RTO / Profitability</th><th>Pincodes / Network</th></tr></thead><tbody>'
+      + [
+          ['Delhivery', 'FY26 (year to Mar 2026)', '1.0 billion parcels (Express, full year)', '\u20b910,486 crore (~$1.26B), +17% YoY', 'PAT \u20b9153 cr; EBITDA \u20b9764 cr (7.3% margin)', '18,800+ pincodes'],
+          ['Delhivery', 'Q4 FY26 (Jan-Mar 2026)', '306 million parcels, +72% YoY', '\u20b92,848 crore, +30% YoY', 'EBITDA \u20b9231 cr (8.1% margin)', '\u2014'],
+          ['Delhivery', 'Q3 FY26 (Oct-Dec 2025)', '295 million parcels, +43% YoY', '\u20b92,798 crore, +18% YoY', 'PAT \u20b9110 cr (4x YoY)', '\u2014'],
+          ['Blue Dart', 'Q1 FY26-27 (Apr-Jun 2026)', 'Not disclosed this quarter', '\u20b91,673 crore, +15.25% YoY', 'PAT \u20b988.5 cr, +81% YoY', 'Pan-India air + ground network'],
+          ['Blue Dart', 'Q3 FY26 (Oct-Dec 2025)', '107.4 million shipments, 374,884 tonnes', '\u20b91,616 crore, ~7% YoY', 'E-comm = 30-31% of revenue', '\u2014'],
+          ['Blue Dart', 'Q2 FY26 (Jul-Sep 2025)', '106.28 million shipments, +10% YoY', '\u20b91,549 crore', 'PAT \u20b979.5 cr', 'B2B 70% / B2C 30% mix'],
+          ['Amazon (global, DSP model)', 'Reported figure', 'Not disclosed as India-specific', 'Not disclosed separately', '98% on-time accuracy (global)', '4,500 DSP partners, 390K drivers, 19 countries'],
+          ['Ekart (Flipkart)', 'Reported figure', 'Not disclosed separately', 'Not disclosed separately (part of Flipkart Group)', 'Not disclosed', '15,300+ pincodes, 16,500+ channel partners'],
+        ].map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td><td>'+r[5]+'</td></tr>'; }).join('')
+      + '</tbody></table></div>'
+      + '<div class="lockText" style="margin-top:6px;">Delhivery and Blue Dart are publicly listed (NSE) and disclose these figures in quarterly filings; treat this as the closest thing to verified "ground truth" in this report \u2014 everything else here is an industry-reported estimate or benchmark.</div>'
+
+      + '<div class="sectionHead"><span class="dot"></span><h3>Global Success-Rate Benchmarks</h3></div>'
+      + '<div class="tblWrap"><table><thead><tr><th>Metric</th><th>What It Measures</th><th>Global Benchmark</th></tr></thead><tbody>'
+      + [
+          ['First Attempt Success (FAS)', '% delivered on the very first attempt', 'Global avg. failure ~8%; India NDR range 20-40%'],
+          ['On-Time Delivery (OTD/OTA)', '% delivered within the promised window', 'Amazon ~98% via predictive routing + Scout robotics'],
+          ['Click-to-Door Time', 'Order placed to doorstep, end to end', 'Amazon under 2 days sitewide, ~2x industry average'],
+          ['NDR Rate', '% of shipments with \u22651 failed attempt', 'India: 20-40% depending on category/geography'],
+          ['RTO Rate', '% of failed orders returned unresolved', 'India: 25-30%; COD orders hit hardest'],
+        ].map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>'; }).join('')
+      + '</tbody></table></div>'
+
+      + '<div class="sectionHead"><span class="dot"></span><h3>Zero-Cost Levers Worth Running This Quarter</h3></div>'
+      + '<div class="insightGrid">'
+      + '<div class="insightCard"><span class="icon">\u260E\uFE0F</span><h4>Call-Before-Attempt</h4><p>Directly targets "customer unavailable" \u2014 typically the single largest NDR reason. Zero cost, pure SOP discipline.</p></div>'
+      + '<div class="insightCard navy"><span class="icon">\u{1F4CD}</span><h4>Fixed Beat Mapping</h4><p>Same rider, same pincode zone every time builds hyperlocal knowledge \u2014 gate codes, timings \u2014 cutting search time with zero spend.</p></div>'
+      + '<div class="insightCard amber"><span class="icon">\u23F1\uFE0F</span><h4>24-48hr NDR Recovery</h4><p>Recovery probability decays by the hour. Closing the loop inside 2 days instead of a passive retry is the highest-leverage lever in the India chain.</p></div>'
+      + '<div class="insightCard purple"><span class="icon">\u{1F4F1}</span><h4>WhatsApp-First Contact</h4><p>Highest open rate in India for NDR recovery \u2014 WhatsApp, then SMS, then a live call for high-value orders.</p></div>'
+      + '<div class="insightCard"><span class="icon">\u{1F3AF}</span><h4>Single-Point Accountability</h4><p>Amazon\u2019s DSP model, JD Logistics\u2019 in-house stations, Ekart\u2019s tuned network \u2014 all converge on one owner per geography.</p></div>'
+      + '<div class="insightCard navy"><span class="icon">\u2705</span><h4>OTP-Verified Cancellations</h4><p>~37% of NDRs are logged as "refused" \u2014 OTP verification is a zero-cost check against false refusals at the doorstep.</p></div>'
+      + '</div>'
+
+      + '<div class="sectionHead"><span class="dot"></span><h3>India 3PL Landscape</h3></div>'
+      + '<div class="tblWrap"><table><thead><tr><th>Player</th><th>Model</th><th>Core Strength</th><th>Where It Falls Short</th></tr></thead><tbody>'
+      + [
+          ['Ekart (Flipkart)', 'Captive, in-house', '15,300+ pincodes, deep Tier-2/3 reach, strong RTO control on Flipkart orders', 'Flipkart-centric; limited use outside its own ecosystem'],
+          ['Delhivery (+ Ecom Express)', 'Open 3PL', '~35% e-comm share post-merger, AI-based RTO Predictor', 'Biggest network \u2260 fastest on every lane'],
+          ['Shadowfax', 'Open 3PL, hyperlocal', 'AI route mapping, strong in same-day/quick-commerce', 'Smaller pan-India depth outside hyperlocal metros'],
+          ['XpressBees', 'Open 3PL, tech-led', 'Cross-border capability, tech-driven routing across 40+ cities', 'Less dominant in deep rural/Tier-3'],
+          ['Amazon (global model)', 'DSP-owned per zone', 'Station proximity + single-point accountability per geography', 'Franchise-model consistency varies by operator'],
+        ].map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>'; }).join('')
+      + '</tbody></table></div>'
+
+      + '<div class="sectionHead"><span class="dot"></span><h3>Global Carriers \u2014 What Cost Per Shipment Hides</h3></div>'
+      + '<div class="insightGrid">'
+      + '<div class="insightCard bad" style="border-left-color:var(--red);"><span class="icon">\u{1F4B8}</span><h4>Failed Delivery Cost (US)</h4><p>~$17.20 per failed attempt \u2014 a second attempt roughly doubles labor and fuel cost against zero extra revenue.</p></div>'
+      + '<div class="insightCard amber"><span class="icon">\u{1F4C8}</span><h4>Surcharge Reality</h4><p>Residential surcharges + fuel + peak fees routinely add 30-50% on top of quoted base rates for UPS/FedEx/DHL.</p></div>'
+      + '<div class="insightCard"><span class="icon">\u{1F1E8}\u{1F1F3}</span><h4>China\u2019s 211 Promise</h4><p>JD Logistics: order before 11am \u2192 same-day; before 11pm \u2192 by 3pm next day, backed by 300,000+ lockers and in-house delivery force.</p></div>'
+      + '</div>'
+
+      + '<div class="sectionHead"><span class="dot"></span><h3>Five Patterns That Repeat in Every High-Performing Network</h3></div>'
+      + '<div class="tblWrap"><table><thead><tr><th>#</th><th>Pattern</th><th>Seen In</th></tr></thead><tbody>'
+      + [
+          ['1', 'Single-point accountability per geography beats shared/floating rider pools', 'Amazon DSPs, JD in-house stations, Ekart'],
+          ['2', 'The first attempt is always cheaper than the second', 'US: $17.20/fail; India: 25-30% of fails \u2192 RTO'],
+          ['3', 'Predictive risk scoring before dispatch catches problems before they\u2019re a field failure', 'Delhivery RTO Predictor'],
+          ['4', 'Density and proximity \u2014 not fleet size \u2014 is the real moat', 'Amazon stations, Walmart store-as-hub, JD locker density'],
+          ['5', 'Customer-facing communication converts an SLA into a trust signal', 'JD\u2019s 211 promise, India\u2019s WhatsApp-first NDR sequence'],
+        ].map(function(r){ return '<tr><td class="mono">'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>'; }).join('')
+      + '</tbody></table></div>'
+      + '<div class="lockText" style="margin-top:6px;">Compiled from research conducted earlier in this planning process \u2014 figures are industry-reported benchmarks, not this dashboard\u2019s own branch data. Cross-check before using in external reporting.</div>';
+  }
+
+  function operations(officeId, role){
+    if(officeId==='ALL'){
+      const rows=aggregateOpsAcrossOffices();
+      const totInward=rows.reduce(function(s,r){return s+r.totInward;},0);
+      const totDelivered=rows.reduce(function(s,r){return s+r.totDelivered;},0);
+      const successPct = totInward? Math.round(totDelivered/totInward*100):0;
+      const totCOD=rows.reduce(function(s,r){return s+r.totCOD;},0);
+      const totKms=rows.reduce(function(s,r){return s+r.totKms;},0);
+      const totCost=rows.reduce(function(s,r){return s+r.totCost;},0);
+      return '<h1 class="pageTitle">Operations Dashboard \u2014 All Branches</h1>'
+        + '<p class="pageSub">Aggregate daily-operations performance across every branch</p>'
+        + '<div class="cardGrid">'
+        + '<div class="kpi"><div class="lbl">Total Inward</div><div class="val">'+totInward+'</div></div>'
+        + '<div class="kpi"><div class="lbl">Total Delivered</div><div class="val">'+totDelivered+'</div></div>'
+        + '<div class="kpi '+(successPct<80?'warn':'good')+'"><div class="lbl">Delivery Success %</div><div class="val">'+successPct+'%</div></div>'
+        + '<div class="kpi"><div class="lbl">COD Collected</div><div class="val">'+Util.inr(totCOD)+'</div></div>'
+        + '<div class="kpi"><div class="lbl">Total KMs Run</div><div class="val">'+totKms+'</div></div>'
+        + '<div class="kpi"><div class="lbl">Total Cost</div><div class="val">'+Util.inr(totCost)+'</div></div>'
+        + '</div>'
+        + '<div class="tblWrap"><table><thead><tr><th>Branch</th><th>Inward</th><th>Delivered</th><th>COD Collected</th><th>KMs Run</th><th>Cost</th></tr></thead><tbody>'
+        + rows.map(function(r){ return '<tr><td>'+r.name+'</td><td class="mono">'+r.totInward+'</td><td class="mono">'+r.totDelivered+'</td><td class="mono">'+Util.inr(r.totCOD)+'</td><td class="mono">'+r.totKms+'</td><td class="mono">'+Util.inr(r.totCost)+'</td></tr>'; }).join('')
+        + '</tbody></table></div>';
+    }
+
+    const d=Store.getData(officeId);
+    const s=d.opsSettings;
+
+    const totInward=d.opsEntries.reduce(function(sum,e){return sum+Number(e.inward||0);},0);
+    const totDelivered=d.opsEntries.reduce(function(sum,e){return sum+Number(e.delivered||0);},0);
+    const successPct=totInward? Math.round(totDelivered/totInward*100):0;
+    const totCOD=d.opsEntries.reduce(function(sum,e){return sum+Number(e.codCash||0);},0);
+    const totCost=d.opsEntries.reduce(function(sum,e){return sum+opsEntryCost(e,s);},0);
+    const totKms=d.opsEntries.reduce(function(sum,e){return sum+Number(e.kmsRun||0);},0);
+    const metrics = d.customMetrics || [];
+
+    const empPanel = '<div class="panel"><h3>Employee Roster</h3>'
+      + '<div class="inlineForm">'
+      + '<div><label>Employee Code</label><input type="text" id="newEmpCode" placeholder="EMP04"></div>'
+      + '<div><label>Employee Name</label><input type="text" id="newEmpName" placeholder="Rider name"></div>'
+      + '<div><button class="btn primary" onclick="Actions.addEmployee(\''+officeId+'\')">Add Employee</button></div>'
+      + '</div><div class="miniList" style="margin-top:10px;">'
+      + d.employees.map(function(e){ return '<div><span>'+e.code+' \u2014 '+e.name+'</span></div>'; }).join('')
+      + '</div></div>';
+
+    const empOptions = d.employees.map(function(e){ return '<option value="'+e.id+'">'+e.code+' \u2014 '+e.name+'</option>'; }).join('');
+    const metricInputs = metrics.map(function(m){
+      return '<div><label>'+m.name+' ('+(m.unit||'count')+')</label><input type="number" id="opMetric_'+m.id+'" value="0" step="0.01"></div>';
+    }).join('');
+    const entryForm = '<div class="panel"><h3>Add End-of-Day Entry</h3><div class="inlineForm">'
+      + '<div><label>Date</label><input type="date" id="opDate" value="'+Util.todayISO()+'"></div>'
+      + '<div><label>Employee</label><select id="opEmp">'+empOptions+'</select></div>'
+      + '<div><label>Inward</label><input type="number" id="opInward" value="0" min="0"></div>'
+      + '<div><label>Delivered</label><input type="number" id="opDelivered" value="0" min="0"></div>'
+      + '<div><label>COD Cash (\u20B9)</label><input type="number" id="opCod" value="0" min="0"></div>'
+      + '<div><label>KMs Run</label><input type="number" id="opKms" value="0" min="0"></div>'
+      + metricInputs
+      + '<div><button class="btn primary" onclick="Actions.addOpsEntry(\''+officeId+'\')">Add Entry</button></div>'
+      + '</div></div>';
+
+    const metricThs = metrics.map(function(m){ return '<th>'+m.name+'</th>'; }).join('');
+    const entryRows = d.opsEntries.slice().reverse().map(function(e){
+      const emp=d.employees.find(function(x){return x.id===e.employeeId;});
+      const undel=Number(e.inward||0)-Number(e.delivered||0);
+      const succ=e.inward? Math.round(Number(e.delivered||0)/Number(e.inward||1)*100):0;
+      const cost=opsEntryCost(e,s);
+      const empOpts2 = d.employees.map(function(x){ return '<option value="'+x.id+'" '+(x.id===e.employeeId?'selected':'')+'>'+x.code+'</option>'; }).join('');
+      const metricTds=metrics.map(function(m){
+        return '<td><input type="number" value="'+((e.custom&&e.custom[m.id])||0)+'" style="min-width:56px;" onchange="Actions.updateOpsEntryCustom(\''+officeId+'\',\''+e.id+'\',\''+m.id+'\',Number(this.value))"></td>';
+      }).join('');
+      return '<tr><td><input type="date" value="'+e.date+'" onchange="Actions.updateOpsEntryField(\''+officeId+'\',\''+e.id+'\',\'date\',this.value)"></td>'
+        + '<td><select onchange="Actions.updateOpsEntryField(\''+officeId+'\',\''+e.id+'\',\'employeeId\',this.value)">'+empOpts2+'</select></td>'
+        + '<td><input type="number" value="'+e.inward+'" onchange="Actions.updateOpsEntryField(\''+officeId+'\',\''+e.id+'\',\'inward\',Number(this.value))"></td>'
+        + '<td><input type="number" value="'+e.delivered+'" onchange="Actions.updateOpsEntryField(\''+officeId+'\',\''+e.id+'\',\'delivered\',Number(this.value))"></td>'
+        + '<td class="mono">'+undel+'</td><td class="mono">'+succ+'%</td>'
+        + '<td><input type="number" value="'+e.codCash+'" onchange="Actions.updateOpsEntryField(\''+officeId+'\',\''+e.id+'\',\'codCash\',Number(this.value))"></td>'
+        + '<td><input type="number" value="'+e.kmsRun+'" onchange="Actions.updateOpsEntryField(\''+officeId+'\',\''+e.id+'\',\'kmsRun\',Number(this.value))"></td>'
+        + '<td class="mono">'+Util.inr(cost)+'</td>'
+        + metricTds
+        + '<td><button class="btn small danger" onclick="Actions.deleteOpsEntry(\''+officeId+'\',\''+e.id+'\')">Delete</button></td></tr>';
+    }).join('');
+
+    const metricSummaryThs = metrics.map(function(m){ return '<th>'+m.name+'</th>'; }).join('');
+    const empSummary = d.employees.map(function(emp){
+      const rows2=d.opsEntries.filter(function(e){return e.employeeId===emp.id;});
+      const inw=rows2.reduce(function(sum,e){return sum+Number(e.inward||0);},0);
+      const del=rows2.reduce(function(sum,e){return sum+Number(e.delivered||0);},0);
+      const undel=inw-del;
+      const succ=inw? Math.round(del/inw*100):0;
+      const cod=rows2.reduce(function(sum,e){return sum+Number(e.codCash||0);},0);
+      const kms=rows2.reduce(function(sum,e){return sum+Number(e.kmsRun||0);},0);
+      const cost=rows2.reduce(function(sum,e){return sum+opsEntryCost(e,s);},0);
+      const metricSums=metrics.map(function(m){
+        const sum=rows2.reduce(function(acc,e){return acc+Number((e.custom&&e.custom[m.id])||0);},0);
+        return '<td class="mono">'+sum+'</td>';
+      }).join('');
+      return '<tr><td>'+emp.code+' \u2014 '+emp.name+'</td><td class="mono">'+inw+'</td><td class="mono">'+del+'</td><td class="mono">'+undel+'</td><td class="mono">'+succ+'%</td>'
+        + '<td class="mono">'+Util.inr(cod)+'</td><td class="mono">'+kms+'</td><td class="mono">'+Util.inr(cost)+'</td>'+metricSums+'</tr>';
+    }).join('');
+
+    const metricKpis = metrics.map(function(m){
+      const total=d.opsEntries.reduce(function(acc,e){return acc+Number((e.custom&&e.custom[m.id])||0);},0);
+      return '<div class="kpi"><div class="lbl">'+m.name+'</div><div class="val">'+total+'</div><div class="sub">'+(m.unit||'count')+'</div></div>';
+    }).join('');
+
+    const cfgNote = role==='super'
+      ? '<div class="lockText">Cost rates & custom metrics are configured from <b>Admin / Branch Setup</b> \u2014 select this branch there to edit them.</div>'
+      : '';
+
+    return '<h1 class="pageTitle">Operations Dashboard \u2014 '+officeName(officeId)+'</h1>'
+      + '<p class="pageSub">End-of-day inward, delivery, COD, distance and custom metric tracking \u2014 employee-wise</p>'
+      + '<div class="cardGrid">'
+      + '<div class="kpi"><div class="lbl">Total Inward</div><div class="val">'+totInward+'</div></div>'
+      + '<div class="kpi"><div class="lbl">Total Delivered</div><div class="val">'+totDelivered+'</div></div>'
+      + '<div class="kpi '+(successPct<80?'warn':'good')+'"><div class="lbl">Delivery Success %</div><div class="val">'+successPct+'%</div></div>'
+      + '<div class="kpi"><div class="lbl">COD Collected</div><div class="val">'+Util.inr(totCOD)+'</div></div>'
+      + '<div class="kpi"><div class="lbl">Total KMs Run</div><div class="val">'+totKms+'</div></div>'
+      + '<div class="kpi"><div class="lbl">Total Operating Cost</div><div class="val">'+Util.inr(totCost)+'</div></div>'
+      + metricKpis
+      + '</div>'
+      + cfgNote
+      + empPanel + entryForm
+      + '<h3 style="color:var(--navy);margin:16px 0 8px;">Daily Entries</h3>'
+      + '<div class="tblWrap"><table><thead><tr><th>Date</th><th>Employee</th><th>Inward</th><th>Delivered</th><th>Undel.</th><th>Success%</th>'
+      + '<th>COD Cash</th><th>KMs</th><th>Cost</th>'+metricThs+'<th></th></tr></thead><tbody>'
+      + (entryRows || '<tr><td colspan="'+(10+metrics.length)+'" style="text-align:center;color:var(--grey);padding:20px;">No entries yet \u2014 add one above.</td></tr>')
+      + '</tbody></table></div>'
+      + '<h3 style="color:var(--navy);margin:16px 0 8px;">Employee-Wise Summary</h3>'
+      + '<div class="tblWrap"><table><thead><tr><th>Employee</th><th>Inward</th><th>Delivered</th><th>Undel.</th><th>Success%</th><th>COD Collected</th>'
+      + '<th>KMs Run</th><th>Cost</th>'+metricSummaryThs+'</tr></thead><tbody>'
+      + empSummary + '</tbody></table></div>';
+  }
+
+  function admin(){
+    const offices=Store.getOffices();
+    const users=Store.getUsers();
+    const officeOptions=offices.map(function(o){ return '<option value="'+o.id+'">'+o.name+'</option>'; }).join('');
+    return '<h1 class="pageTitle">Admin / Branch Setup</h1>'
+      + '<p class="pageSub">Manage branches, statuses, and every login\u2019s role and access (Super Admin only)</p>'
+      + backupRestorePanel()
+      + '<div class="adminGrid">'
+      + '<div class="panel"><h3>Add New Branch</h3>'
+      + '<input type="text" id="newOfficeName" placeholder="Branch name (e.g. Palladam)">'
+      + '<input type="text" id="newOfficeCode" placeholder="Branch code (e.g. PLD)">'
+      + '<button class="btn primary" onclick="Actions.addOffice()">Add Branch</button>'
+      + '<h3 style="margin-top:16px;">Existing Branches</h3><div class="miniList">'
+      + offices.map(function(o){
+          const isClosed=o.status==='Closed';
+          return '<div><span>'+o.name+' ('+o.code+') <span class="pill '+(isClosed?'No':'Yes')+'" style="margin-left:4px;">'+(o.status||'Active')+'</span></span>'
+            + '<span style="display:flex;gap:6px;">'
+            + '<button class="btn small" onclick="Actions.toggleOfficeStatus(\''+o.id+'\')">'+(isClosed?'Reopen':'Close')+'</button>'
+            + '<button class="btn small danger" onclick="Actions.deleteOffice(\''+o.id+'\',\''+o.name.replace(/'/g,"\\'")+'\')">Delete</button>'
+            + '</span></div>';
+        }).join('')
+      + '</div></div>'
+      + '<div class="panel"><h3 id="userFormTitle">Add Office / Super Login</h3>'
+      + '<input type="hidden" id="editingUserMobile" value="">'
+      + '<input type="text" id="newUserMobile" placeholder="Mobile number">'
+      + '<input type="text" id="newUserPass" placeholder="Password">'
+      + '<input type="text" id="newUserName" placeholder="Display name">'
+      + '<select id="newUserRole" onchange="document.getElementById(\'officeFieldWrap\').style.display=(this.value===\'office\'?\'block\':\'none\')"><option value="office">Office / Manager</option><option value="super">Super Admin</option></select>'
+      + '<div id="officeFieldWrap"><select id="newUserOffice">'+officeOptions+'</select></div>'
+      + '<div style="display:flex;gap:8px;">'
+      + '<button class="btn primary" id="userSaveBtn" onclick="Actions.saveUser()">Add Login</button>'
+      + '<button class="btn" id="userCancelBtn" style="display:none;" onclick="Actions.cancelUserEdit()">Cancel</button>'
+      + '</div>'
+      + '<h3 style="margin-top:16px;">Existing Logins</h3><div class="miniList">'
+      + users.map(function(u){
+          const isSuper=u.role==='super';
+          const inactive=u.active===false;
+          const isSelf=Auth.get() && Auth.get().mobile===u.mobile && !Auth.isImpersonating();
+          return '<div><span>'+u.name+' \u2014 '+u.mobile+' <span class="pill '+(inactive?'No':'Yes')+'" style="margin-left:4px;">'+(inactive?'Inactive':'Active')+'</span><br>'
+            + '<span style="color:var(--grey);font-size:10.5px;">'+(isSuper?'Super Admin':officeName(u.officeId))+'</span></span>'
+            + '<span style="display:flex;gap:6px;">'
+            + (!isSelf && !inactive ? '<button class="btn small" onclick="Auth.impersonate(\''+u.mobile+'\')">Login As</button>' : '')
+            + '<button class="btn small" onclick="Actions.editUserStart(\''+u.mobile+'\')">Edit</button>'
+            + '<button class="btn small" onclick="Actions.toggleUserActive(\''+u.mobile+'\')">'+(inactive?'Enable':'Disable')+'</button>'
+            + '<button class="btn small danger" onclick="Actions.deleteUser(\''+u.mobile+'\')">Delete</button>'
+            + '</span></div>';
+        }).join('')
+      + '</div></div>'
+      + costMetricsPanel(offices)
+      + '</div>';
+  }
+
+  function backupRestorePanel(){
+    return '<div class="panel" style="background:var(--amber-bg);border-color:#EBD9AE;">'
+      + '<h3 style="color:#8A6300;">Backup & Restore \u2014 protects your data across browser sessions and file re-downloads</h3>'
+      + '<div class="lockText" style="color:#6b5000;margin-bottom:8px;">All data lives only in this browser. If you open a re-downloaded copy of this file, or clear browser data, it starts empty. '
+      + 'Export a backup regularly and use Restore to bring your data into any copy of this dashboard.</div>'
+      + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">'
+      + '<button class="btn primary" onclick="Actions.exportBackup()">\u2B07\uFE0F Download Backup (JSON)</button>'
+      + '<label class="btn" style="cursor:pointer;">\u2B06\uFE0F Restore from Backup<input type="file" accept="application/json" style="display:none;" onchange="Actions.importBackup(this)"></label>'
+      + '</div></div>';
+  }
+
+  function costMetricsPanel(offices){
+    const selId = UIState.getCostOffice() || (offices[0] && offices[0].id);
+    const d = selId ? Store.getData(selId) : null;
+    const s = d ? d.opsSettings : {ratePerKm:0, ratePerDelivery:0, fixedCostPerWorkingDay:0};
+    const metrics = d ? (d.customMetrics||[]) : [];
+    const officeOpts = offices.map(function(o){ return '<option value="'+o.id+'" '+(o.id===selId?'selected':'')+'>'+o.name+' ('+o.code+')</option>'; }).join('');
+    return '<div class="panel" style="grid-column:1/-1;"><h3>Operations Cost & Custom Metrics \u2014 by Branch</h3>'
+      + '<div class="lockText" style="margin-bottom:10px;">Rates and metrics can vary facility to facility \u2014 select the branch first, then set values and save.</div>'
+      + '<div class="inlineForm">'
+      + '<div><label>Select Facility</label><select id="costFacilitySelect" onchange="Actions.selectCostFacility(this.value)">'+officeOpts+'</select></div>'
+      + '</div>'
+      + '<div class="inlineForm" style="margin-top:10px;">'
+      + '<div><label>Rate per KM (\u20B9)</label><input type="number" id="costRateKm" value="'+(s.ratePerKm||0)+'"></div>'
+      + '<div><label>Rate per Delivery (\u20B9)</label><input type="number" id="costRateDelivery" value="'+(s.ratePerDelivery||0)+'"></div>'
+      + '<div><label>Fixed Cost per Working Day (\u20B9)</label><input type="number" id="costFixedWorking" value="'+(s.fixedCostPerWorkingDay||0)+'"></div>'
+      + '<div><button class="btn primary" onclick="Actions.saveFacilityCostSettings()">Save Cost Parameters</button></div>'
+      + '</div>'
+      + '<h3 style="margin-top:20px;">Custom Metrics for '+(d? (offices.find(function(o){return o.id===selId;})||{}).name : '')+'</h3>'
+      + '<div class="inlineForm">'
+      + '<div><label>Metric Name</label><input type="text" id="newMetricNameAdmin" placeholder="e.g. NDR Count"></div>'
+      + '<div><label>Unit</label><input type="text" id="newMetricUnitAdmin" placeholder="e.g. count, \u20B9, %"></div>'
+      + '<div><button class="btn primary" onclick="Actions.addCustomMetricAdmin()">Add Metric</button></div>'
+      + '</div>'
+      + (metrics.length
+        ? '<div class="miniList" style="margin-top:8px;">'+metrics.map(function(m){
+            return '<div><span>'+m.name+' ('+(m.unit||'count')+')</span><button class="btn small danger" onclick="Actions.deleteCustomMetric(\''+selId+'\',\''+m.id+'\')">Delete</button></div>';
+          }).join('')+'</div>'
+        : '<div class="lockText" style="margin-top:6px;">No custom metrics defined yet for this branch.</div>');
+  }
+
+  return {dashboard:dashboard, orgChart:orgChart, facility:facility, assets:assets, manpower:manpower, peopleOrg:peopleOrg, operations:operations, admin:admin, reports:reports};
+})();
+
+/* ============================================================
+   ACTIONS
+============================================================ */
+const Actions=(function(){
+  function openBranchIds(){
+    return Array.prototype.slice.call(document.querySelectorAll('details.branchSection[open]'))
+      .map(function(el){ return el.getAttribute('data-office'); });
+  }
+  function restoreOpenBranches(ids){
+    ids.forEach(function(id){
+      const el=document.querySelector('details.branchSection[data-office="'+id+'"]');
+      if(el) el.setAttribute('open','');
+    });
+  }
+  function showToast(msg){
+    const t=document.getElementById('toastEl');
+    t.textContent=msg||'Saved';
+    t.classList.add('show');
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer=setTimeout(function(){ t.classList.remove('show'); }, 1100);
+  }
+  function refresh(){
+    const scrollY=window.scrollY;
+    const openIds=openBranchIds();
+    App.navigate(document.querySelector('.navitem.active').id.replace('nav_',''));
+    restoreOpenBranches(openIds);
+    window.scrollTo(0,scrollY);
+    showToast('Saved \u2713');
+  }
+  function updateField(section, id, field, value){
+    updateField2(App.getOffice(), section, id, field, value);
+  }
+  function updateField2(officeId, section, id, field, value){
+    const d = Store.getData(officeId);
+    const arr = d[section];
+    const row = arr.find(function(r){return r.id===id;});
+    if(row){ row[field]=value; Store.setData(officeId, d); }
+    refresh();
+  }
+  function updateOpsSetting(officeId, field, value){
+    const d=Store.getData(officeId);
+    d.opsSettings[field]=value;
+    Store.setData(officeId, d);
+    refresh();
+  }
+  function selectCostFacility(officeId){
+    UIState.setCostOffice(officeId);
+    App.navigate('admin');
+  }
+  function saveFacilityCostSettings(){
+    const officeId=document.getElementById('costFacilitySelect').value;
+    const d=Store.getData(officeId);
+    d.opsSettings.ratePerKm=Number(document.getElementById('costRateKm').value||0);
+    d.opsSettings.ratePerDelivery=Number(document.getElementById('costRateDelivery').value||0);
+    d.opsSettings.fixedCostPerWorkingDay=Number(document.getElementById('costFixedWorking').value||0);
+    Store.setData(officeId, d);
+    UIState.setCostOffice(officeId);
+    showToast('Cost parameters saved \u2713');
+    App.navigate('admin');
+  }
+  function addCustomMetricAdmin(){
+    const officeId=document.getElementById('costFacilitySelect').value;
+    const nameEl=document.getElementById('newMetricNameAdmin');
+    const unitEl=document.getElementById('newMetricUnitAdmin');
+    const name=nameEl.value.trim();
+    if(!name){ alert('Enter a metric name.'); return; }
+    const d=Store.getData(officeId);
+    if(!d.customMetrics) d.customMetrics=[];
+    d.customMetrics.push({id:Util.uid(), name:name, unit:unitEl.value.trim()||'count'});
+    Store.setData(officeId, d);
+    UIState.setCostOffice(officeId);
+    showToast('Metric added \u2713');
+    App.navigate('admin');
+  }
+  function addEmployee(officeId){
+    const code=document.getElementById('newEmpCode').value.trim();
+    const name=document.getElementById('newEmpName').value.trim();
+    if(!code||!name){ alert('Enter employee code and name.'); return; }
+    const d=Store.getData(officeId);
+    d.employees.push({id:Util.uid(), code:code, name:name});
+    Store.setData(officeId, d);
+    refresh();
+  }
+  function addOpsEntry(officeId){
+    const val=function(id){ return document.getElementById(id).value; };
+    const empId=val('opEmp');
+    if(!empId){ alert('Add an employee first.'); return; }
+    const d=Store.getData(officeId);
+    const custom={};
+    (d.customMetrics||[]).forEach(function(m){
+      const el=document.getElementById('opMetric_'+m.id);
+      if(el) custom[m.id]=Number(el.value||0);
+    });
+    const entry={
+      id:Util.uid(),
+      date:val('opDate')||Util.todayISO(),
+      employeeId:empId,
+      inward:Number(val('opInward')||0),
+      delivered:Number(val('opDelivered')||0),
+      codCash:Number(val('opCod')||0),
+      kmsRun:Number(val('opKms')||0),
+      custom:custom,
+    };
+    d.opsEntries.push(entry);
+    Store.setData(officeId, d);
+    refresh();
+  }
+  function deleteOpsEntry(officeId, entryId){
+    const d=Store.getData(officeId);
+    d.opsEntries=d.opsEntries.filter(function(e){return e.id!==entryId;});
+    Store.setData(officeId, d);
+    refresh();
+  }
+  function updateOpsEntryField(officeId, entryId, field, value){
+    const d=Store.getData(officeId);
+    const e=d.opsEntries.find(function(x){return x.id===entryId;});
+    if(e){ e[field]=value; Store.setData(officeId, d); }
+    refresh();
+  }
+  function updateOpsEntryCustom(officeId, entryId, metricId, value){
+    const d=Store.getData(officeId);
+    const e=d.opsEntries.find(function(x){return x.id===entryId;});
+    if(e){ if(!e.custom) e.custom={}; e.custom[metricId]=value; Store.setData(officeId, d); }
+    refresh();
+  }
+  function addCustomMetric(officeId){
+    const nameEl=document.getElementById('newMetricName_'+officeId);
+    const unitEl=document.getElementById('newMetricUnit_'+officeId);
+    const name=nameEl.value.trim();
+    if(!name){ alert('Enter a metric name.'); return; }
+    const d=Store.getData(officeId);
+    if(!d.customMetrics) d.customMetrics=[];
+    d.customMetrics.push({id:Util.uid(), name:name, unit:unitEl.value.trim()||'count'});
+    Store.setData(officeId, d);
+    refresh();
+  }
+  function deleteCustomMetric(officeId, metricId){
+    const ok=confirm('Delete this custom metric? Historical values recorded under it will no longer display.');
+    if(!ok) return;
+    const d=Store.getData(officeId);
+    d.customMetrics=(d.customMetrics||[]).filter(function(m){return m.id!==metricId;});
+    Store.setData(officeId, d);
+    refresh();
+  }
+  function toggleFacilityFilter(officeId){
+    let filter=UIState.getFacilityFilter();
+    if(!filter){ filter=new Set(Store.getOffices().map(function(o){return o.id;})); }
+    if(filter.has(officeId)) filter.delete(officeId); else filter.add(officeId);
+    UIState.setFacilityFilter(filter);
+    App.navigate('facility');
+  }
+  function addChecklistItem(officeId, section){
+    const prefix = section==='facility' ? 'Fac' : 'Ppl';
+    const catEl=document.getElementById('new'+prefix+'Cat_'+officeId);
+    const itemEl=document.getElementById('new'+prefix+'Item_'+officeId);
+    const descEl=document.getElementById(section==='facility' ? ('newFacStd_'+officeId) : ('newPplCovers_'+officeId));
+    const cat=catEl.value.trim(), item=itemEl.value.trim(), desc=descEl.value.trim();
+    if(!cat||!item){ alert('Enter both category and item name.'); return; }
+    const d=Store.getData(officeId);
+    const row = section==='facility'
+      ? {id:Util.uid(), cat:cat, item:item, std:desc, status:'Not Started', verified:'NA', remarks:'', responsible:''}
+      : {id:Util.uid(), cat:cat, item:item, covers:desc, status:'Not Started', verified:'NA', remarks:'', responsible:''};
+    d[section].push(row);
+    Store.setData(officeId, d);
+    refresh();
+  }
+  function deleteChecklistItem(officeId, section, id){
+    const ok=confirm('Delete this checklist item? This cannot be undone.');
+    if(!ok) return;
+    const d=Store.getData(officeId);
+    d[section]=d[section].filter(function(r){return r.id!==id;});
+    Store.setData(officeId, d);
+    refresh();
+  }
+  function addAssetItem(officeId){
+    const nameEl=document.getElementById('newAssetName_'+officeId);
+    const name=nameEl.value.trim();
+    if(!name){ alert('Enter an asset name.'); return; }
+    const d=Store.getData(officeId);
+    d.assets.push({id:Util.uid(), name:name, req:0, avail:0, status:'Not Verified', auditDate:'', remarks:''});
+    Store.setData(officeId, d);
+    refresh();
+  }
+  function deleteAssetItem(officeId, id){
+    const ok=confirm('Delete this asset item? This cannot be undone.');
+    if(!ok) return;
+    const d=Store.getData(officeId);
+    d.assets=d.assets.filter(function(a){return a.id!==id;});
+    Store.setData(officeId, d);
+    refresh();
+  }
+  function addManpowerRole(officeId){
+    const nameEl=document.getElementById('newRoleName_'+officeId);
+    const typeEl=document.getElementById('newRoleType_'+officeId);
+    const sancEl=document.getElementById('newRoleSanc_'+officeId);
+    const roleName=nameEl.value.trim();
+    if(!roleName){ alert('Enter a role/designation name.'); return; }
+    const d=Store.getData(officeId);
+    d.manpower.push({id:Util.uid(), role:roleName, type:typeEl.value, sanc:Number(sancEl.value||0), onroll:0, shift:'', remarks:''});
+    Store.setData(officeId, d);
+    refresh();
+  }
+  function deleteManpowerRole(officeId, id){
+    const ok=confirm('Delete this manpower role? This removes its sanctioned count and on-roll data for this branch.');
+    if(!ok) return;
+    const d=Store.getData(officeId);
+    d.manpower=d.manpower.filter(function(m){return m.id!==id;});
+    Store.setData(officeId, d);
+    refresh();
+  }
+  function exportBackup(){
+    const bundle=Store.exportBackup();
+    const blob=new Blob([JSON.stringify(bundle,null,2)], {type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    a.href=url;
+    a.download='lastmile-dashboard-backup-'+stamp+'.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Backup downloaded \u2713');
+  }
+  function importBackup(inputEl){
+    const file=inputEl.files && inputEl.files[0];
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        const bundle=JSON.parse(e.target.result);
+        const ok=confirm('Restoring this backup will REPLACE all current branches, logins, and data in this browser. Continue?');
+        if(!ok){ inputEl.value=''; return; }
+        Store.importBackup(bundle);
+        showToast('Backup restored \u2713');
+        App.refreshOfficeSelector();
+        App.navigate('admin');
+      } catch(err){
+        alert('Could not restore this file: '+err.message);
+      }
+      inputEl.value='';
+    };
+    reader.readAsText(file);
+  }
+  function addOffice(){
+    const name=document.getElementById('newOfficeName').value.trim();
+    const code=document.getElementById('newOfficeCode').value.trim().toUpperCase();
+    if(!name||!code){ alert('Enter both branch name and code.'); return; }
+    Store.addOffice(name, code);
+    App.refreshOfficeSelector();
+    App.navigate('admin');
+  }
+  function deleteOffice(officeId, officeName){
+    const offices=Store.getOffices();
+    if(offices.length<=1){ alert('At least one branch must remain.'); return; }
+    const ok=confirm('Delete branch "'+officeName+'"?\n\nThis permanently removes all its checklist, asset, manpower, org chart and operations data, and any office logins tied to it. This cannot be undone.');
+    if(!ok) return;
+    const remaining=offices.filter(function(o){return o.id!==officeId;});
+    Store.setOffices(remaining);
+    localStorage.removeItem('lmfd_data_'+officeId);
+    const users=Store.getUsers().filter(function(u){return u.officeId!==officeId;});
+    Store.setUsers(users);
+    App.refreshOfficeSelector();
+    App.navigate('admin');
+  }
+  function toggleOfficeStatus(officeId){
+    Store.toggleOfficeStatus(officeId);
+    App.refreshOfficeSelector();
+    App.navigate('admin');
+  }
+  function saveUser(){
+    const editingMobile=document.getElementById('editingUserMobile').value;
+    const mobile=document.getElementById('newUserMobile').value.trim();
+    const pass=document.getElementById('newUserPass').value;
+    const name=document.getElementById('newUserName').value.trim();
+    const role=document.getElementById('newUserRole').value;
+    const officeId=document.getElementById('newUserOffice').value;
+    if(!mobile||!pass||!name){ alert('Fill all fields.'); return; }
+    const users=Store.getUsers();
+    if(editingMobile){
+      const u=users.find(function(x){return x.mobile===editingMobile;});
+      if(!u){ alert('User not found.'); return; }
+      if(mobile!==editingMobile && users.some(function(x){return x.mobile===mobile;})){ alert('Mobile number already exists.'); return; }
+      u.mobile=mobile; u.password=pass; u.name=name; u.role=role; u.officeId=(role==='office'?officeId:null);
+    } else {
+      if(users.some(function(u){return u.mobile===mobile;})){ alert('Mobile number already exists.'); return; }
+      users.push({mobile:mobile, password:pass, role:role, officeId:(role==='office'?officeId:null), name:name, active:true});
+    }
+    Store.setUsers(users);
+    App.navigate('admin');
+  }
+  function editUserStart(mobile){
+    const u=Store.getUsers().find(function(x){return x.mobile===mobile;});
+    if(!u) return;
+    document.getElementById('editingUserMobile').value=u.mobile;
+    document.getElementById('newUserMobile').value=u.mobile;
+    document.getElementById('newUserPass').value=u.password;
+    document.getElementById('newUserName').value=u.name;
+    document.getElementById('newUserRole').value=u.role;
+    document.getElementById('officeFieldWrap').style.display=(u.role==='office'?'block':'none');
+    if(u.officeId) document.getElementById('newUserOffice').value=u.officeId;
+    document.getElementById('userFormTitle').textContent='Edit Login';
+    document.getElementById('userSaveBtn').textContent='Update Login';
+    document.getElementById('userCancelBtn').style.display='inline-block';
+  }
+  function cancelUserEdit(){
+    App.navigate('admin');
+  }
+  function toggleUserActive(mobile){
+    const users=Store.getUsers();
+    const u=users.find(function(x){return x.mobile===mobile;});
+    if(u){ u.active = (u.active===false)?true:false; Store.setUsers(users); }
+    App.navigate('admin');
+  }
+  function deleteUser(mobile){
+    const users=Store.getUsers();
+    const target=users.find(function(x){return x.mobile===mobile;});
+    if(!target) return;
+    const superCount=users.filter(function(u){return u.role==='super';}).length;
+    if(target.role==='super' && superCount<=1){ alert('At least one Super Admin login must remain.'); return; }
+    const ok=confirm('Delete login for "'+target.name+'" ('+target.mobile+')? This cannot be undone.');
+    if(!ok) return;
+    Store.setUsers(users.filter(function(u){return u.mobile!==mobile;}));
+    App.navigate('admin');
+  }
+  return {updateField:updateField, updateField2:updateField2, updateOpsSetting:updateOpsSetting, addEmployee:addEmployee,
+    addOpsEntry:addOpsEntry, deleteOpsEntry:deleteOpsEntry, updateOpsEntryField:updateOpsEntryField, updateOpsEntryCustom:updateOpsEntryCustom,
+    addOffice:addOffice, deleteOffice:deleteOffice, toggleOfficeStatus:toggleOfficeStatus,
+    saveUser:saveUser, editUserStart:editUserStart, cancelUserEdit:cancelUserEdit, toggleUserActive:toggleUserActive, deleteUser:deleteUser,
+    addManpowerRole:addManpowerRole, deleteManpowerRole:deleteManpowerRole, toggleFacilityFilter:toggleFacilityFilter,
+    addCustomMetric:addCustomMetric, deleteCustomMetric:deleteCustomMetric,
+    selectCostFacility:selectCostFacility, saveFacilityCostSettings:saveFacilityCostSettings, addCustomMetricAdmin:addCustomMetricAdmin,
+    exportBackup:exportBackup, importBackup:importBackup,
+    addChecklistItem:addChecklistItem, deleteChecklistItem:deleteChecklistItem, addAssetItem:addAssetItem, deleteAssetItem:deleteAssetItem};
+})();
+
+/* ============================================================
+   INIT
+============================================================ */
+document.addEventListener('DOMContentLoaded', function(){
+  Store.init();
+  const existing = Auth.restore();
+  if(existing){ App.start(existing); }
+  document.getElementById('loginPass').addEventListener('keydown', function(e){ if(e.key==='Enter') Auth.login(); });
+});
+</script>
+</body>
+</html>
